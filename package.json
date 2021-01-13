@@ -1,41 +1,26 @@
 {
-  "name": "@rocketmakers/api-hooks",
+  "name": "api-hooks",
   "version": "1.0.0",
   "description": "Rocketmakers front-end library for parsing a generated Typescript API client into a set of configurable React hooks for fetching and mutating data.",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
-  "scripts": {
-    "build": "tsc --pretty --extendedDiagnostics -p src -d",
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
   },
-  "publishConfig": {
-    "access": "public"
+  "scripts": {
+    "start": "(cd playground && npm start)",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "(cd module && npm i) && (cd playground && npm i) && npm run link-api-hooks",
+    "link-api-hooks": "(cd module && npm run build && npm run link) && (cd playground && npm run link-api-hooks)",
+    "check-versions": "ncu && (cd module && ncu) && (cd playground && ncu)",
+    "upgrade-all": "ncu -u && (cd module && ncu -u) && (cd playground && ncu -u) && npm i"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/Rocketmakers/api-hooks.git"
   },
   "author": "developers@rocketmakers.com",
-  "keywords": [
-    "API",
-    "Hooks",
-    "Rocketmakers",
-    "React",
-    "Typescript",
-    "Query",
-    "Mutation"
-  ],
   "license": "MIT",
-  "peerDependencies": {
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1"
-  },
   "devDependencies": {
-    "@types/react": "^17.0.0",
-    "@types/react-dom": "^17.0.0",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "tslib": "^2.0.3",
-    "typescript": "^4.1.3"
+    "npm-check-updates": "^10.2.5"
   }
 }
