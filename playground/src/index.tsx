@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
-import { ApiHooksStore } from "@rocketmakers/api-hooks"
+import { ApiHooksEvents, ApiHooksStore } from "@rocketmakers/api-hooks"
 import { HashRouter } from "react-router-dom"
 import { ArmstrongConfig, DialogProvider, ToastProvider } from "@rocketmakers/armstrong"
 import { Shell } from "./shell"
@@ -8,6 +8,14 @@ import { Shell } from "./shell"
 import "./theme/theme.scss"
 
 ArmstrongConfig.setLocale("en-gb")
+
+ApiHooksEvents.onBeforeInitialState.addEventHook(() => {
+  return JSON.parse(localStorage.getItem("my-data-store") ?? "{}")
+})
+
+ApiHooksEvents.onStateUpdated.addEventHook((state) => {
+  localStorage.setItem("my-data-store", JSON.stringify(state))
+})
 
 class App extends React.Component {
   componentDidCatch() {

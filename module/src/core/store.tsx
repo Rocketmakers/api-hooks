@@ -1,6 +1,7 @@
-import * as React from 'react';
-import { ApiHooks } from './apiHooks';
-import { ApiHooksCaching } from './caching';
+import * as React from "react"
+import { ApiHooks } from "./apiHooks"
+import { ApiHooksCaching } from "./caching"
+import { ApiHooksEvents } from "./events"
 /**
  * API Hooks - Store
  * ----------------
@@ -16,10 +17,10 @@ export namespace ApiHooksStore {
   /** TYPES */
 
   /** Root type for the state object */
-  export type State = { [endpointKey: string]: { [paramHash: string]: StateSlice<any> } };
+  export type State = { [endpointKey: string]: { [paramHash: string]: StateSlice<any> } }
 
   //* * Type for a test key to be used when called from a test file */
-  export type TestKeyState = { [endpointKey: string]: { testKey: string } };
+  export type TestKeyState = { [endpointKey: string]: { testKey: string } }
 
   /**
    * Type for a single slice of data
@@ -32,12 +33,12 @@ export namespace ApiHooksStore {
    * @param shouldRefetchData A bool that triggers a refetch, this is set by the refetch queries logic.
    */
   export interface StateSlice<TData> {
-    status?: 'loading-manual' | 'loading-auto' | 'loading-refetch' | 'loaded' | 'error';
-    data?: TData;
-    error?: any;
-    paramHash: string;
-    timestamp?: number;
-    shouldRefetchData?: boolean;
+    status?: "loading-manual" | "loading-auto" | "loading-refetch" | "loaded" | "error"
+    data?: TData
+    error?: any
+    paramHash: string
+    timestamp?: number
+    shouldRefetchData?: boolean
   }
 
   /** UTILITIES */
@@ -46,16 +47,16 @@ export namespace ApiHooksStore {
    * Converts the fetching mode passed to the loading action to a loading-specific state slice status
    * @param mode the fetching mode used to invoke the fetcher.
    */
-  export function stateSliceStatusFromFetchingMode(mode: ApiHooks.FetchingMode): StateSlice<any>['status'] {
+  export function stateSliceStatusFromFetchingMode(mode: ApiHooks.FetchingMode): StateSlice<any>["status"] {
     switch (mode) {
-      case 'auto':
-        return 'loading-auto';
-      case 'manual':
-        return 'loading-manual';
-      case 'refetch':
-        return 'loading-refetch';
+      case "auto":
+        return "loading-auto"
+      case "manual":
+        return "loading-manual"
+      case "refetch":
+        return "loading-refetch"
       default:
-        throw new Error(`Non-active fetching mode ${mode} passed to state slice during a loading action`);
+        throw new Error(`Non-active fetching mode ${mode} passed to state slice during a loading action`)
     }
   }
 
@@ -63,16 +64,16 @@ export namespace ApiHooksStore {
    * Converts the state slice status into a fetching mode to be returned from the live response
    * @param status The current state slice status
    */
-  export function fetchingModeFromStateSliceStatus(status: StateSlice<any>['status']): ApiHooks.FetchingMode {
+  export function fetchingModeFromStateSliceStatus(status: StateSlice<any>["status"]): ApiHooks.FetchingMode {
     switch (status) {
-      case 'loading-auto':
-        return 'auto';
-      case 'loading-manual':
-        return 'manual';
-      case 'loading-refetch':
-        return 'refetch';
+      case "loading-auto":
+        return "auto"
+      case "loading-manual":
+        return "manual"
+      case "loading-refetch":
+        return "refetch"
       default:
-        return 'not-fetching';
+        return "not-fetching"
     }
   }
 
@@ -89,10 +90,10 @@ export namespace ApiHooksStore {
      * @param maxCachingDepth The maximum number of data sets to store for an endpoint - comes from a query config setting
      */
     export interface Action extends StateSlice<any> {
-      endpointKey: string;
-      cacheKeyValue: string;
-      maxCachingDepth: number;
-      paramHash: string;
+      endpointKey: string
+      cacheKeyValue: string
+      maxCachingDepth: number
+      paramHash: string
     }
 
     /**
@@ -102,9 +103,9 @@ export namespace ApiHooksStore {
      * @param cacheKeyValue (optional) A key to reset - each unique key will represent a different state slice in the dictionary.
      */
     export interface ResetAction {
-      reset: true;
-      endpointKey?: string;
-      cacheKeyValue?: string;
+      reset: true
+      endpointKey?: string
+      cacheKeyValue?: string
     }
 
     /**
@@ -114,12 +115,12 @@ export namespace ApiHooksStore {
      * @param cacheKeyValue (optional) A key to refetch - each unique key will represent a different state slice in the dictionary.
      */
     export interface RefetchAction {
-      refetch: true;
-      endpointKey?: string;
-      cacheKeyValue?: string;
+      refetch: true
+      endpointKey?: string
+      cacheKeyValue?: string
     }
 
-    export type GenericAction = Action | ResetAction | RefetchAction;
+    export type GenericAction = Action | ResetAction | RefetchAction
 
     /** ACTION FACTORIES */
 
@@ -129,7 +130,7 @@ export namespace ApiHooksStore {
      * @returns A boolean - true if reset action, false if state update action
      */
     export function isResetAction(action: React.ReducerAction<React.Reducer<State, GenericAction>>): action is ResetAction {
-      return !!(action as ResetAction).reset;
+      return !!(action as ResetAction).reset
     }
 
     /**
@@ -138,7 +139,7 @@ export namespace ApiHooksStore {
      * @returns A boolean - true if reset action, false if state update action
      */
     export function isRefetchAction(action: React.ReducerAction<React.Reducer<State, GenericAction>>): action is RefetchAction {
-      return !!(action as RefetchAction).refetch;
+      return !!(action as RefetchAction).refetch
     }
 
     /**
@@ -149,8 +150,14 @@ export namespace ApiHooksStore {
      * @param maxCachingDepth The maximum number of data sets to store for an endpoint - comes from a query config setting
      * @returns An action object to be dispatched
      */
-    export function loading(endpointKey: string, paramHash: string, cacheKeyValue: string, mode: ApiHooks.FetchingMode, maxCachingDepth: number): React.ReducerAction<React.Reducer<State, GenericAction>> {
-      return { status: stateSliceStatusFromFetchingMode(mode), endpointKey, cacheKeyValue, paramHash, maxCachingDepth, shouldRefetchData: false };
+    export function loading(
+      endpointKey: string,
+      paramHash: string,
+      cacheKeyValue: string,
+      mode: ApiHooks.FetchingMode,
+      maxCachingDepth: number
+    ): React.ReducerAction<React.Reducer<State, GenericAction>> {
+      return { status: stateSliceStatusFromFetchingMode(mode), endpointKey, cacheKeyValue, paramHash, maxCachingDepth, shouldRefetchData: false }
     }
 
     /**
@@ -163,7 +170,7 @@ export namespace ApiHooksStore {
      * @returns An action object to be dispatched
      */
     export function loaded<TData>(endpointKey: string, paramHash: string, cacheKeyValue: string, data: TData, maxCachingDepth: number): React.ReducerAction<React.Reducer<State, GenericAction>> {
-      return { status: 'loaded', timestamp: Date.now(), endpointKey, cacheKeyValue, paramHash, data, maxCachingDepth, error: undefined, shouldRefetchData: false };
+      return { status: "loaded", timestamp: Date.now(), endpointKey, cacheKeyValue, paramHash, data, maxCachingDepth, error: undefined, shouldRefetchData: false }
     }
 
     /**
@@ -176,7 +183,7 @@ export namespace ApiHooksStore {
      * @returns An action object to be dispatched
      */
     export function error(endpointKey: string, paramHash: string, cacheKeyValue: string, requestError: any, maxCachingDepth: number): React.ReducerAction<React.Reducer<State, GenericAction>> {
-      return { status: 'error', endpointKey, cacheKeyValue, paramHash, error: requestError, maxCachingDepth };
+      return { status: "error", endpointKey, cacheKeyValue, paramHash, error: requestError, maxCachingDepth }
     }
 
     /**
@@ -186,7 +193,7 @@ export namespace ApiHooksStore {
      * @returns An action object to be dispatched
      */
     export function reset(endpointKey?: string, cacheKeyValue?: string): React.ReducerAction<React.Reducer<State, GenericAction>> {
-      return { reset: true, endpointKey, cacheKeyValue };
+      return { reset: true, endpointKey, cacheKeyValue }
     }
 
     /**
@@ -196,7 +203,7 @@ export namespace ApiHooksStore {
      * @returns An action object to be dispatched
      */
     export function refetch(endpointKey?: string, cacheKeyValue?: string): React.ReducerAction<React.Reducer<State, Actions.Action | Actions.RefetchAction>> {
-      return { refetch: true, endpointKey, cacheKeyValue };
+      return { refetch: true, endpointKey, cacheKeyValue }
     }
   }
 
@@ -207,7 +214,7 @@ export namespace ApiHooksStore {
    * - Contains the state object and dispatch method
    * - All Api hooks listen for changes from this
    */
-  export const Context = React.createContext<[State, React.Dispatch<React.ReducerAction<React.Reducer<State, Actions.GenericAction>>>, TestKeyState]>([{}, undefined, undefined]);
+  export const Context = React.createContext<[State, React.Dispatch<React.ReducerAction<React.Reducer<State, Actions.GenericAction>>>, TestKeyState]>([{}, undefined, undefined])
 
   /**
    * Api Hooks - React reducer
@@ -219,59 +226,59 @@ export namespace ApiHooksStore {
   export const reducer: React.Reducer<State, Actions.GenericAction | Actions.RefetchAction> = (state, action) => {
     // check for reset action and reset the endpoint data
     if (Actions.isResetAction(action)) {
-      const { endpointKey, cacheKeyValue } = action;
+      const { endpointKey, cacheKeyValue } = action
       if (endpointKey) {
         return {
           ...state,
           [endpointKey]: cacheKeyValue
             ? {
                 ...(state[endpointKey] ?? {}),
-                [cacheKeyValue]: undefined
+                [cacheKeyValue]: undefined,
               }
-            : undefined
-        };
+            : undefined,
+        }
       }
-      return {};
+      return {}
     }
     // check for refetch action and set the shouldRefetchData endpoint to 'true' on the appropriate endpoints, triggering a refetch.
     if (Actions.isRefetchAction(action)) {
-      const { endpointKey, cacheKeyValue } = action;
-      let stateIsModified = false;
-      const newState = { ...state };
-      Object.keys(newState ?? {}).forEach(endpointKeyIndex => {
+      const { endpointKey, cacheKeyValue } = action
+      let stateIsModified = false
+      const newState = { ...state }
+      Object.keys(newState ?? {}).forEach((endpointKeyIndex) => {
         if (newState[endpointKeyIndex] && (!endpointKey || endpointKey === endpointKeyIndex)) {
-          Object.keys(newState[endpointKeyIndex]).forEach(cacheKeyValueIndex => {
+          Object.keys(newState[endpointKeyIndex]).forEach((cacheKeyValueIndex) => {
             if (newState[endpointKeyIndex][cacheKeyValueIndex] && (!cacheKeyValue || cacheKeyValue === cacheKeyValueIndex)) {
-              newState[endpointKeyIndex][cacheKeyValueIndex] = { ...newState[endpointKeyIndex][cacheKeyValueIndex], shouldRefetchData: true };
-              stateIsModified = true;
+              newState[endpointKeyIndex][cacheKeyValueIndex] = { ...newState[endpointKeyIndex][cacheKeyValueIndex], shouldRefetchData: true }
+              stateIsModified = true
             }
-          });
+          })
           if (stateIsModified) {
-            newState[endpointKeyIndex] = { ...newState[endpointKeyIndex] };
+            newState[endpointKeyIndex] = { ...newState[endpointKeyIndex] }
           }
         }
-      });
+      })
       if (stateIsModified) {
-        return newState;
+        return newState
       }
-      return state;
+      return state
     }
     // rebuild the state object by applying changes from the action to the current state
-    const { endpointKey, cacheKeyValue, maxCachingDepth, ...stateSlice } = action;
+    const { endpointKey, cacheKeyValue, maxCachingDepth, ...stateSlice } = action
     const newState = {
       ...state,
       [endpointKey]: {
         ...(state[endpointKey] ?? {}),
         [cacheKeyValue]: {
           ...(state[endpointKey]?.[cacheKeyValue] ?? {}),
-          ...stateSlice
-        }
-      }
-    };
+          ...stateSlice,
+        },
+      },
+    }
     // make sure the dictionary of state slices for this endpoint hasn't exceeded the maximum depth
-    newState[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(newState[endpointKey], maxCachingDepth);
-    return newState;
-  };
+    newState[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(newState[endpointKey], maxCachingDepth)
+    return newState
+  }
 
   /**
    * Api Hooks - React Provider
@@ -280,7 +287,18 @@ export namespace ApiHooksStore {
    * @param param0 The props for the provider component (should only be children)
    */
   export const Provider: React.FC<{ testKeys?: TestKeyState }> = ({ children, testKeys }) => {
-    const [state, dispatch] = React.useReducer(reducer, {});
-    return <Context.Provider value={[state, dispatch, testKeys]}>{children}</Context.Provider>;
-  };
+    const initialState = React.useMemo(() => {
+      return ApiHooksEvents.onBeforeInitialState.executeEventHooks(testKeys) ?? {}
+    }, [])
+
+    const [state, dispatch] = React.useReducer(reducer, initialState)
+
+    React.useEffect(() => {
+      if (ApiHooksEvents.onStateUpdated.hasEventHooks()) {
+        ApiHooksEvents.onStateUpdated.executeEventHooks(state, testKeys)
+      }
+    }, [state])
+
+    return <Context.Provider value={[state, dispatch, testKeys]}>{children}</Context.Provider>
+  }
 }

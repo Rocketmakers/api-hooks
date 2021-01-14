@@ -119,7 +119,6 @@ export namespace ApiHooks {
     mockEndpointFactory?: MockEndpointLibraryFactory<TApiClient>
     defaultDataFactory?: DefaultDataLibraryFactory<TApiClient>
   }
-
   interface GeneralConfig {
     debugMode?: boolean
   }
