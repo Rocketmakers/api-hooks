@@ -4,5 +4,6 @@ import { apiClient } from "../api/apiClient"
 export const apiHooks = ApiHooks.create(apiClient, {
   generalConfig: {
     debugMode: true,
+    showMissingConfigWarnings: true,
   },
 })

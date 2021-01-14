@@ -27,6 +27,9 @@ export namespace ApiHooks {
   /** general utility type - gets the type of the first parameter in a function */
   type FirstParamOf<TFunc extends AnyFunction> = Parameters<TFunc>[0]
 
+  /** general utility type - differentiates between the three types of hook that can be used for an endpoint */
+  type HookType = "query" | "mutation" | "request"
+
   /** CLIENT CREATION TYPES */
 
   /** The type for the factory function that creates the hook config library */
@@ -134,7 +137,15 @@ export namespace ApiHooks {
     defaultDataFactory?: DefaultDataLibraryFactory<TApiClient>
   }
   interface GeneralConfig {
+    /**
+     * Switches on verbose console output for debugging purposes
+     */
     debugMode?: boolean
+    /**
+     * If true, a warning will be shown in the console when an endpoint is used but no config has been added at endpoint level.
+     * This is useful if your application structure involves setting all cache keys and refetch queries at endpoint level, and you don't want to leave anything out.
+     */
+    showMissingConfigWarnings?: boolean
   }
 
   /** LIVE RESPONSE TYPES */
@@ -319,6 +330,15 @@ export namespace ApiHooks {
     console.log(...messages)
   }
 
+  /**
+   * Root warning function for debug mode, just a proxy for the console warn for now.
+   * @param messages The items to warn
+   */
+  function warn(...messages: any[]) {
+    // eslint-disable-next-line no-console
+    console.warn(...messages)
+  }
+
   /** CREATION FUNCTIONS */
 
   /**
@@ -399,6 +419,8 @@ export namespace ApiHooks {
       // store an initial application started date/time
       const applicationStartedTimestamp = Date.now()
 
+      // LOGGER FUNCTIONS
+
       /**
        * Logs messages from useQuery hooks to the console if in debug mode
        * - includes some data about the controller and endpoint
@@ -430,6 +452,28 @@ export namespace ApiHooks {
         }
       }
 
+      /**
+       * An in memory storage container to avoid showing multiple config warnings for the same endpoint
+       */
+      const endpointWarningsShown: HookType[] = []
+
+      /**
+       * Called when an endpoint is used with either a query or mutation hook.
+       * Used to log a warning if the relevant config is missing.
+       * @param type The type of hook that's been used
+       */
+      const endpointUsed = (type: HookType) => {
+        if (
+          generalConfig?.showMissingConfigWarnings &&
+          !endpointWarningsShown.some((t) => t === type) &&
+          ((!Object.keys(querySettings).length && type === "query") || (!Object.keys(mutationSettings).length && type === "mutation"))
+        ) {
+          const configExample = type === "query" ? "cache keys" : "refetch queries"
+          warn(`API Hooks WARNING! - The endpoint "${endpointHash}" has been used as a ${type} without any ${type} config defined at endpoint level. Do you need to add any config? (i.e. ${configExample})`)
+          endpointWarningsShown.push(type)
+        }
+      }
+
       const controllerDictionary = { ...incomingControllerDictionary }
       controllerDictionary[endpointKey] = {
         /**
@@ -440,6 +484,11 @@ export namespace ApiHooks {
          * - Can only be used within a React Function Component
          */
         useQuery: (executionSettings: UseQuerySettings<any, any> = {}): UseQueryResponse<any, any> => {
+          /** MARK ENDPOINT AS USED */
+          React.useEffect(() => {
+            endpointUsed("query")
+          }, [])
+
           /** GATHER DATA AND SETTINGS */
 
           // listen to the context from the store - this state is updated via the central reducer - see `./store.tsx`
@@ -735,6 +784,11 @@ export namespace ApiHooks {
          * - Can only be used within a React Function Component
          */
         useMutation: (executionSettings: UseMutationSettings<any> = {}): UseMutationResponse<any, any> => {
+          /** MARK ENDPOINT AS USED */
+          React.useEffect(() => {
+            endpointUsed("mutation")
+          }, [])
+
           // store response in state to return as index 1 from the hook
           const [liveResponse, setLiveResponse] = React.useState<UseMutationResponse<any, any>[1]>({ isFetching: false, fetchingMode: "not-fetching" })
 
