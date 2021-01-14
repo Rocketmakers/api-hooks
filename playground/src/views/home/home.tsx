@@ -4,7 +4,9 @@ import { apiHooks } from "../../state/apiHooks"
 import "./home.scss"
 
 export const Home: React.FC = () => {
-  const [{ isFetching, data }] = apiHooks.exampleQueries.getUserList.useQuery()
+  const [{ isFetching, data }] = apiHooks.exampleQueries.getUserList.useQuery({
+    initialData: [{email: "joe@rocketmakers.com", lastName: "Lewsey", firstName: "Joe", id: "HAHA"}]
+  })
 
   return (
     <div className="home">

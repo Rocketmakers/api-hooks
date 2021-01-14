@@ -163,6 +163,7 @@ export namespace ApiHooks {
    * @param forceNetworkOnManualInvoke Should manual invocations hit the server by default? Can be over-ridden during a manualInvoke with the `forceNetwork` setting
    * @param parameters The parameters to send to the request
    * @param payloadModifier An optional function to modify the payload stored for this endpoint, receives any stored data as well as the incoming data.
+   * @param initialData An optional object containing data to be used on first render, ideal for passing data for server-side rendering. NOTE: This will be ignored if the "default data" feature is in use.
    */
   export interface UseQuerySettings<TParam, TResponse> {
     autoInvoke?: boolean
@@ -175,6 +176,7 @@ export namespace ApiHooks {
     forceNetworkOnManualInvoke?: boolean
     parameters?: TParam
     payloadModifier?: (prevData: TResponse, newData: TResponse) => TResponse
+    initialData?: TResponse
   }
 
   /**
@@ -436,7 +438,18 @@ export namespace ApiHooks {
               queryLog(`Using default data`, { defaultData: defaultDataValue })
               return {
                 paramHash: paramHashFromHook,
-                data: defaultDataFactory(settingsFromHook.parameters),
+                data: defaultDataValue,
+                status: "loaded",
+                timestamp: applicationStartedTimestamp,
+                shouldRefetchData: false,
+              }
+            }
+            // check for "initialData" passed to hook, and use that on first render
+            if (!currentStoredStateSlice && settingsFromHook.initialData) {
+              queryLog(`Using initial data`, { initialData: settingsFromHook.initialData })
+              return {
+                paramHash: paramHashFromHook,
+                data: settingsFromHook.initialData,
                 status: "loaded",
                 timestamp: applicationStartedTimestamp,
                 shouldRefetchData: false,

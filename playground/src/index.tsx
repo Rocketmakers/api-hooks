@@ -9,13 +9,13 @@ import "./theme/theme.scss"
 
 ArmstrongConfig.setLocale("en-gb")
 
-ApiHooksEvents.onBeforeInitialState.addEventHook(() => {
-  return JSON.parse(localStorage.getItem("my-data-store") ?? "{}")
-})
+// ApiHooksEvents.onBeforeInitialState.addEventHook(() => {
+//   return JSON.parse(localStorage.getItem("my-data-store") ?? "{}")
+// })
 
-ApiHooksEvents.onStateUpdated.addEventHook((state) => {
-  localStorage.setItem("my-data-store", JSON.stringify(state))
-})
+// ApiHooksEvents.onStateUpdated.addEventHook((state) => {
+//   localStorage.setItem("my-data-store", JSON.stringify(state))
+// })
 
 class App extends React.Component {
   componentDidCatch() {
