@@ -102,21 +102,35 @@ export namespace ApiHooks {
 
   /**
    * Type denoting the settings object passed to the create method.
-   * @param queryConfig The application level query settings, can be overridden at endpoint and hook execution level
-   * @param mutationConfig The application level mutation settings, can be overridden at endpoint and hook execution level
-   * @param requestConfig The application level settings for the useRequest hook, can be overridden at endpoint and hook execution level
-   * @param generalConfig The application level general settings, can not be overridden, apply generally at application level
-   * @param hookConfigFactory The factory function that creates the hook config library
-   * @param mockEndpointFactory The factory function that creates the mock endpoint library
-   * @param defaultDataFactory The factory function that creates the default data library
    */
   interface CreationSettings<TApiClient extends {}, TParam extends {}> {
+    /**
+     * The application level query settings, can be overridden at endpoint and hook execution level
+     */
     queryConfig?: UseQueryConfigSettings<TParam, any>
+    /**
+     * The application level mutation settings, can be overridden at endpoint and hook execution level
+     */
     mutationConfig?: UseMutationSettings<TParam>
+    /**
+     * The application level settings for the useRequest hook, can be overridden at endpoint and hook execution level
+     */
     requestConfig?: UseRequestSettings<TParam>
+    /**
+     * The application level general settings, can not be overridden, apply generally at application level
+     */
     generalConfig?: GeneralConfig
+    /**
+     * The factory function that creates the hook config library
+     */
     hookConfigFactory?: HookConfigLibraryFactory<TApiClient>
+    /**
+     * The factory function that creates the mock endpoint library
+     */
     mockEndpointFactory?: MockEndpointLibraryFactory<TApiClient>
+    /**
+     * The factory function that creates the default data library
+     */
     defaultDataFactory?: DefaultDataLibraryFactory<TApiClient>
   }
   interface GeneralConfig {
@@ -153,29 +167,51 @@ export namespace ApiHooks {
 
   /**
    * The basic query settings used at system, application, endpoint and hook execution level.
-   * @param autoInvoke Should the request fire when the component mounts? Will only fire if cache is stale - defaults to true at system level
-   * @param invokeOnParamChange Should the request re-fire when the params change? - defaults to true at system level
-   * @param caching The caching settings
-   * @param useDefaultData Should the hook use the canned default data on initial render?
-   * @param useMockEndpoints Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
-   * @param cacheKey (optional) A different string to use as the cache indexer, rather than the param hash, mostly for paging queries.
-   * @param holdInvokeForCacheKeyParam (optional) Will hold any invocation until the parameter designated as the cacheKey has a non "falsey" value.
-   * @param forceNetworkOnManualInvoke Should manual invocations hit the server by default? Can be over-ridden during a manualInvoke with the `forceNetwork` setting
-   * @param parameters The parameters to send to the request
-   * @param payloadModifier An optional function to modify the payload stored for this endpoint, receives any stored data as well as the incoming data.
-   * @param initialData An optional object containing data to be used on first render, ideal for passing data for server-side rendering. NOTE: This will be ignored if the "default data" feature is in use.
    */
   export interface UseQuerySettings<TParam, TResponse> {
+    /**
+     * Should the request fire when the component mounts? Will only fire if cache is stale - defaults to true at system level
+     */
     autoInvoke?: boolean
+    /**
+     * Should the request re-fire when the params change? - defaults to true at system level
+     */
     invokeOnParamChange?: boolean
+    /**
+     * The caching settings
+     */
     caching?: ApiHooksCaching.Settings<TParam>
+    /**
+     * Should the hook use the canned default data on initial render?
+     */
     useDefaultData?: boolean
+    /**
+     * Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
+     */
     useMockEndpoints?: boolean
+    /**
+     * (optional) A different string to use as the cache indexer, rather than the param hash, mostly for paging queries.
+     */
     cacheKey?: CacheKey<TParam>
+    /**
+     * (optional) Will hold any invocation until the parameter designated as the cacheKey has a non "falsey" value.
+     */
     holdInvokeForCacheKeyParam?: boolean
+    /**
+     * Should manual invocations hit the server by default? Can be over-ridden during a manualInvoke with the `forceNetwork` setting
+     */
     forceNetworkOnManualInvoke?: boolean
+    /**
+     * The parameters to send to the request
+     */
     parameters?: TParam
+    /**
+     * An optional function to modify the payload stored for this endpoint, receives any stored data as well as the incoming data.
+     */
     payloadModifier?: (prevData: TResponse, newData: TResponse) => TResponse
+    /**
+     * An optional object containing data to be used on first render, ideal for passing data for server-side rendering. NOTE: This will be ignored if the "default data" feature is in use.
+     */
     initialData?: TResponse
   }
 
@@ -189,11 +225,15 @@ export namespace ApiHooks {
 
   /**
    * The settings used by the 'fetch' method (returned as the second item in the array) from the useQuery hook
-   * @param forceNetwork If true - cache status will be ignored and data re-requested from the server. Takes it's default from the `forceNetworkOnManualInvoke` query setting
-   * @param payloadModifier An optional function to modify the payload stored for this endpoint, receives any stored data as well as the incoming data.
    */
   export interface UseQueryFetchSettings<TResponse> {
+    /**
+     * If true - cache status will be ignored and data re-requested from the server. Takes it's default from the `forceNetworkOnManualInvoke` query setting
+     */
     forceNetwork?: boolean
+    /**
+     * An optional function to modify the payload stored for this endpoint, receives any stored data as well as the incoming data.
+     */
     payloadModifier?: (prevData: TResponse, newData: TResponse) => TResponse
   }
 
@@ -220,17 +260,28 @@ export namespace ApiHooks {
 
   /**
    * The basic mutation settings used at system, application, endpoint and hook execution level.
-   * @param throwErrors (default=true) Should the request throw errors? Or swallow them, allowing them to be handled via the live response object?
-   * @param fetchInBackground If true, the live response data and error will not be cleared when a new fetch is invoked.
-   * @param useMockEndpoints Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
-   * @param parameters The parameters of the mutation request can be optionally defined here.
-   * @param refetchQueries A set of endpoint IDs denoting queries to be re-fetched after the mutation has happened.
    */
   export interface UseMutationSettings<TParam> {
+    /**
+     * @default true
+     * Should the request throw errors? Or swallow them, allowing them to be handled via the live response object?
+     */
     throwErrors?: boolean
+    /**
+     * If true, the live response data and error will not be cleared when a new fetch is invoked.
+     */
     fetchInBackground?: boolean
+    /**
+     * Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
+     */
     useMockEndpoints?: boolean
+    /**
+     * The parameters of the mutation request can be optionally defined here.
+     */
     parameters?: TParam
+    /**
+     * A set of endpoint IDs denoting queries to be re-fetched after the mutation has happened.
+     */
     refetchQueries?: EndpointIDs.Response<TParam>[]
   }
 
@@ -245,6 +296,9 @@ export namespace ApiHooks {
    * The basic request settings used at system, application, endpoint and hook execution level.
    */
   export interface UseRequestSettings<TParam> {
+    /**
+     * The parameters of the request can be optionally defined here.
+     */
     parameters?: TParam
   }
 

@@ -19,25 +19,37 @@ export namespace ApiHooksStore {
   /** Root type for the state object */
   export type State = { [endpointKey: string]: { [paramHash: string]: StateSlice<any> } }
 
-  //* * Type for a test key to be used when called from a test file */
+  //** Type for a test key to be used when called from a test file */
   export type TestKeyState = { [endpointKey: string]: { testKey: string } }
 
   /**
    * Type for a single slice of data
    * - specific to one endpoint and set of parameters
-   * @param status The current status of the stored data
-   * @param data The stored data
-   * @param error An API error if caught - is reset after a successful request
-   * @param paramHash A string representing the specific set of parameters passed to this data request
-   * @param timestamp The UNIX timestamp of the last request
-   * @param shouldRefetchData A bool that triggers a refetch, this is set by the refetch queries logic.
    */
   export interface StateSlice<TData> {
+    /**
+     *  The current status of the stored data
+     */
     status?: "loading-manual" | "loading-auto" | "loading-refetch" | "loaded" | "error"
+    /**
+     *  The stored data
+     */
     data?: TData
+    /**
+     *  An API error if caught - is reset after a successful request
+     */
     error?: any
+    /**
+     *  A string representing the specific set of parameters passed to this data request
+     */
     paramHash: string
+    /**
+     *  The UNIX timestamp of the last request
+     */
     timestamp?: number
+    /**
+     * A bool that triggers a refetch, this is set by the refetch queries logic.
+     */
     shouldRefetchData?: boolean
   }
 
@@ -84,39 +96,59 @@ export namespace ApiHooksStore {
 
     /**
      * Root type for a state update action sent from an API hook
-     * @param endpointKey A key specific to the endpoint (in format `controller.endpoint`)
-     * @param cacheKeyValue A key to cache the data by - each unique key will represent a different state slice in the dictionary.
-     * @param paramHash A string representing the specific set of parameters passed to this data request
-     * @param maxCachingDepth The maximum number of data sets to store for an endpoint - comes from a query config setting
      */
     export interface Action extends StateSlice<any> {
+      /**
+       *  A key specific to the endpoint (in format `controller.endpoint`)
+       */
       endpointKey: string
+      /**
+       *  A key to cache the data by - each unique key will represent a different state slice in the dictionary.
+       */
       cacheKeyValue: string
+      /**
+       *  A string representing the specific set of parameters passed to this data request
+       */
       maxCachingDepth: number
+      /**
+       *  The maximum number of data sets to store for an endpoint - comes from a query config setting
+       */
       paramHash: string
     }
 
     /**
      * Root type for the data reset action
-     * @param reset A constant 'true' - used by the reducer to detect a reset action
-     * @param endpointKey (optional) Key of the endpoint to reset - resets all endpoints of not passed
-     * @param cacheKeyValue (optional) A key to reset - each unique key will represent a different state slice in the dictionary.
      */
     export interface ResetAction {
+      /**
+       * A constant 'true' - used by the reducer to detect a reset action
+       */
       reset: true
+      /**
+       * (optional) Key of the endpoint to reset - resets all endpoints of not passed
+       */
       endpointKey?: string
+      /**
+       * (optional) A key to reset - each unique key will represent a different state slice in the dictionary.
+       */
       cacheKeyValue?: string
     }
 
     /**
      * Root type for the data refetch action
-     * @param refetch A constant 'true' - used by the reducer to detect a refetch action
-     * @param endpointKey (optional) Key of the endpoint to refetch - will mark all endpoints as needing a refetch of not passed
-     * @param cacheKeyValue (optional) A key to refetch - each unique key will represent a different state slice in the dictionary.
      */
     export interface RefetchAction {
+      /**
+       * A constant 'true' - used by the reducer to detect a refetch action
+       */
       refetch: true
+      /**
+       * (optional) Key of the endpoint to refetch - will mark all endpoints as needing a refetch of not passed
+       */
       endpointKey?: string
+      /**
+       *  (optional) A key to refetch - each unique key will represent a different state slice in the dictionary.
+       */
       cacheKeyValue?: string
     }
 
@@ -281,18 +313,38 @@ export namespace ApiHooksStore {
   }
 
   /**
+   * Props for the provider component
+   */
+  export interface ProviderProps {
+    /**
+     * When using API Hooks with automated tests you can pass an optional "test key" string for each endpoint using this {[EndpointID]: testKey} dictionary. These strings will be passed to your "Mock Endpoints" so that you can customize the data you return based on the test you're running.
+     * @example { endpointIDs.myController.myEndpoint(): "UserFormTest" }
+     */
+    testKeys?: TestKeyState
+  }
+
+  /**
    * Api Hooks - React Provider
    * - Must be imported and wrapped around the entire app
    * - Enables re-renders downstream when state changes
-   * @param param0 The props for the provider component (should only be children)
    */
-  export const Provider: React.FC<{ testKeys?: TestKeyState }> = ({ children, testKeys }) => {
+  export const Provider: React.FC<ProviderProps> = ({ children, testKeys }) => {
+
+    /**
+     * Execute the "onBeforeInitialState" event hooks and retrieve some potential state to use
+     */
     const initialState = React.useMemo(() => {
       return ApiHooksEvents.onBeforeInitialState.executeEventHooks(testKeys) ?? {}
     }, [])
 
+    /**
+     * The root reducer
+     */
     const [state, dispatch] = React.useReducer(reducer, initialState)
 
+    /**
+     * Execute the "onStateUpdated" event hooks and pass the updated state
+     */
     React.useEffect(() => {
       if (ApiHooksEvents.onStateUpdated.hasEventHooks()) {
         ApiHooksEvents.onStateUpdated.executeEventHooks(state, testKeys)

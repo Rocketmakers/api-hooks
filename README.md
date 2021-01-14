@@ -38,14 +38,30 @@ export const apiClient = new ApiClient()
 
 ## Getting Started
 
+First of all, you'll need to import the API Hooks provider component and wrap the area of the DOM in which you'll be using API Hooks (usually the entire application.) NOTE: The provider component must only be used once in your app:
+
+```TypeScript
+import * as ReactDOM from "react-dom"
+import { APIHooksStore } from "@rocketmakers/api-hooks"
+import { AppComponent } from "*Root app component location*"
+
+ReactDOM.render(
+  <APIHooksStore.Provider>
+    <AppComponent />
+  </APIHooksStore.Provider>,
+  document.getElementById("host"))
+)
+```
+
 Getting the core hook library up and running is as simple as calling the `create` method and passing an API Client object (described above):
 
 ```TypeScript
-import { APIHooks } from "@rocketmakers/apihooks"
+import { APIHooks } from "@rocketmakers/api-hooks"
 import { apiClient } from "*API CLient location*"
 
 const apiHooks = APIHooks.create(apiClient)
 ```
+
 The `apiHooks` constant above now contains a library of React hooks contained within an object structure that matches the controller/endpoint structure of your API Client.
 
 # ... To be continued...

@@ -70,13 +70,20 @@ class EventManager<TCallback extends (...params: any) => any> {
  * - Creates and exports an event manager for each event
  */
 export namespace ApiHooksEvents {
+
+  /** TYPES */
+
+  export type OnBeforeInitialStateCallback = (testKeys?: ApiHooksStore.TestKeyState) => ApiHooksStore.State | undefined
+  export type OnStateUpdated = (state: ApiHooksStore.State, testKeys?: ApiHooksStore.TestKeyState) => void
+
+  /** MANAGERS */
+
   /**
    * The "onBeforeInitialState" event is triggered once just before the state is created.
    * - Only one callback should be registered to this event.
    * - Callback can return an initial state dictionary to load on first render
    * - If multiple callbacks are registered to this event, the return value of the LAST one registered will be used as initial state.
    */
-  export type OnBeforeInitialStateCallback = (testKeys?: ApiHooksStore.TestKeyState) => ApiHooksStore.State | undefined
   export const onBeforeInitialState = new EventManager<OnBeforeInitialStateCallback>()
 
   /**
@@ -84,6 +91,5 @@ export namespace ApiHooksEvents {
    * - Callbacks will receive the state object that has just been updated.
    * - Caution: Callbacks registered to this event will be called frequently
    */
-  export type OnStateUpdated = (state: ApiHooksStore.State, testKeys?: ApiHooksStore.TestKeyState) => void
   export const onStateUpdated = new EventManager<OnStateUpdated>()
 }
