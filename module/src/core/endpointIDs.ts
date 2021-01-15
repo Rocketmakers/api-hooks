@@ -7,6 +7,9 @@ export namespace EndpointIDs {
   /** CREATION TYPES */
 
   /** The root type of the endpointIDs object, represents a dictionary of controllers */
+  type ControllerMethodsMulti<TApiClientDictionary> = { [TClientKey in keyof TApiClientDictionary]: ControllerMethods<TApiClientDictionary[TClientKey]> }
+
+  /** The root type of the endpointIDs object, represents a dictionary of controllers */
   type ControllerMethods<TApiClient> = { [TControllerKey in keyof TApiClient]: EndpointMethods<TApiClient[TControllerKey]> }
 
   /** The type of the endpointID factory - receives optional caching config an returns a response object which can be used to identify this endpoint within global state */
@@ -65,5 +68,19 @@ export namespace EndpointIDs {
       }, {} as EndpointMethods<any>)
       return newMemo
     }, {} as ControllerMethods<TApiClient>)
+  }
+
+  /**
+   * The create function takes a dictionary of API clients and returns a dictionary of endpoint identifiers to be used for declaring refetch queries and for testing.
+   * @param apiClientDictionary A dictionary of API clients to parse, must be an object containing client key strings mapped to clients containing controller objects with nested endpoint functions
+   * @returns A dictionary of endpoint identifiers to be used for declaring refetch queries and for testing.
+   */
+  export function createMulti<TApiClientDictionary = any>(apiClientDictionary: TApiClientDictionary): ControllerMethodsMulti<TApiClientDictionary> {
+    return Object.keys(apiClientDictionary).reduce<ControllerMethodsMulti<TApiClientDictionary>>((memo, clientKey) => {
+      const newMemo = { ...memo }
+      const client = apiClientDictionary[clientKey]
+      newMemo[clientKey] = create(client)
+      return newMemo
+    }, {} as ControllerMethodsMulti<TApiClientDictionary>)
   }
 }

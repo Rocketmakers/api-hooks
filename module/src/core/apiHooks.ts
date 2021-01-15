@@ -32,23 +32,46 @@ export namespace ApiHooks {
 
   /** CLIENT CREATION TYPES */
 
+  /** The type for the factory function that creates the hook config library for "multi" mode (multiple API clients) */
+  export type HookConfigLibraryFactoryMulti<TApiClientDictionary> = (emptyLibrary: HookConfigControllerLibraryMulti<TApiClientDictionary>) => HookConfigControllerLibraryMulti<TApiClientDictionary>
+
   /** The type for the factory function that creates the hook config library */
   export type HookConfigLibraryFactory<TApiClient> = (emptyLibrary: HookConfigControllerLibrary<TApiClient>) => HookConfigControllerLibrary<TApiClient>
+
+  /** The type for the factory function that creates the mock endpoint library for "multi" mode (multiple API clients) */
+  export type MockEndpointLibraryFactoryMulti<TApiClientDictionary> = (
+    emptyLibrary: MockEndpointControllerLibraryMulti<TApiClientDictionary>
+  ) => MockEndpointControllerLibraryMulti<TApiClientDictionary>
 
   /** The type for the factory function that creates the mock endpoint library */
   export type MockEndpointLibraryFactory<TApiClient> = (emptyLibrary: MockEndpointControllerLibrary<TApiClient>) => MockEndpointControllerLibrary<TApiClient>
 
-  /** The type for the factory function that creates the mock endpoint library */
+  /** The type for the factory function that creates the default data library for "multi" mode (multiple API clients) */
+  export type DefaultDataLibraryFactoryMulti<TApiClientDictionary> = (emptyLibrary: DefaultDataControllerLibraryMulti<TApiClientDictionary>) => DefaultDataControllerLibraryMulti<TApiClientDictionary>
+
+  /** The type for the factory function that creates the default data library */
   export type DefaultDataLibraryFactory<TApiClient> = (emptyLibrary: DefaultDataControllerLibrary<TApiClient>) => DefaultDataControllerLibrary<TApiClient>
+
+  /** The root type of the apiHooks "multi" object, represents a dictionary of api clients */
+  type ControllerHooksMulti<TApiClientDictionary> = { [TClientKey in keyof TApiClientDictionary]: ControllerHooks<TApiClientDictionary[TClientKey]> }
 
   /** The root type of the apiHooks object, represents a dictionary of controllers */
   type ControllerHooks<TApiClient> = { [TControllerKey in keyof TApiClient]: EndpointHooks<TApiClient[TControllerKey]> }
 
+  /** The root type of the hookConfig "multi" object, represents a dictionary of api clients */
+  type HookConfigControllerLibraryMulti<TApiClientDictionary> = { [TClientKey in keyof TApiClientDictionary]: HookConfigControllerLibrary<TApiClientDictionary[TClientKey]> }
+
   /** The root type of the hookConfig object, represents a dictionary of controllers */
   type HookConfigControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: HookEndpointConfig<TApiClient[TControllerKey]> }
 
+  /** The root type of the mockEndpoint "multi" object, represents a dictionary of api clients */
+  type MockEndpointControllerLibraryMulti<TApiClientDictionary> = { [TClientKey in keyof TApiClientDictionary]: MockEndpointControllerLibrary<TApiClientDictionary[TClientKey]> }
+
   /** The root type of the mockEndpoints object, represents a dictionary of controllers */
   type MockEndpointControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: MockEndpointLibrary<TApiClient[TControllerKey]> }
+
+  /** The root type of the defaultData "multi" object, represents a dictionary of api clients */
+  type DefaultDataControllerLibraryMulti<TApiClientDictionary> = { [TClientKey in keyof TApiClientDictionary]: DefaultDataControllerLibrary<TApiClientDictionary[TClientKey]> }
 
   /** The root type of the defaultData object, represents a dictionary of controllers */
   type DefaultDataControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: DefaultDataLibrary<TApiClient[TControllerKey]> }
@@ -103,10 +126,7 @@ export namespace ApiHooks {
       : never
   }
 
-  /**
-   * Type denoting the settings object passed to the create method.
-   */
-  interface CreationSettings<TApiClient extends {}, TParam extends {}> {
+  interface CreatingSettingsBase<TParam extends {}> {
     /**
      * The application level query settings, can be overridden at endpoint and hook execution level
      */
@@ -123,6 +143,12 @@ export namespace ApiHooks {
      * The application level general settings, can not be overridden, apply generally at application level
      */
     generalConfig?: GeneralConfig
+  }
+
+  /**
+   * Type denoting the settings object passed to the create method.
+   */
+  interface CreationSettings<TApiClient extends {}, TParam extends {}> extends CreatingSettingsBase<TParam> {
     /**
      * The factory function that creates the hook config library
      */
@@ -135,6 +161,24 @@ export namespace ApiHooks {
      * The factory function that creates the default data library
      */
     defaultDataFactory?: DefaultDataLibraryFactory<TApiClient>
+  }
+
+  /**
+   * Type denoting the settings object passed to the createMulti method.
+   */
+  interface CreationSettingsMulti<TApiClientDictionary extends {}, TParam extends {}> extends CreatingSettingsBase<TParam> {
+    /**
+     * The factory function that creates the hook config library
+     */
+    hookConfigFactory?: HookConfigLibraryFactoryMulti<TApiClientDictionary>
+    /**
+     * The factory function that creates the mock endpoint library
+     */
+    mockEndpointFactory?: MockEndpointLibraryFactoryMulti<TApiClientDictionary>
+    /**
+     * The factory function that creates the default data library
+     */
+    defaultDataFactory?: DefaultDataLibraryFactoryMulti<TApiClientDictionary>
   }
   interface GeneralConfig {
     /**
@@ -469,7 +513,9 @@ export namespace ApiHooks {
           ((!Object.keys(querySettings).length && type === "query") || (!Object.keys(mutationSettings).length && type === "mutation"))
         ) {
           const configExample = type === "query" ? "cache keys" : "refetch queries"
-          warn(`API Hooks WARNING! - The endpoint "${endpointHash}" has been used as a ${type} without any ${type} config defined at endpoint level. Do you need to add any config? (i.e. ${configExample})`)
+          warn(
+            `API Hooks WARNING! - The endpoint "${endpointHash}" has been used as a ${type} without any ${type} config defined at endpoint level. Do you need to add any config? (i.e. ${configExample})`
+          )
           endpointWarningsShown.push(type)
         }
       }
@@ -939,7 +985,26 @@ export namespace ApiHooks {
   }
 
   /**
-   * The create function takes an API client and returns the hooks, config dictionaries, and mock endpoints dictionary.
+   * The function that merges the system settings with any root settings passed to application level config.
+   * Used by the "create" and "createMulti" methods
+   * @param config The application level config for the useQuery and useMutation hooks. Overrides the system config but can potentially be overridden at endpoint and hook level
+   * @returns Three dictionaries of merged settings for the three hook types.
+   */
+  function mergeRootSettings(config: CreationSettings<any, any> | CreationSettingsMulti<any, any>) {
+    // apply application level query settings onto system level if any
+    const rootQuerySettings: UseQueryConfigSettings<any, any> = { ...ApiHooksSystemSettings.systemDefaultQuery, ...(config.queryConfig ?? {}) }
+    // apply application level query caching settings onto system level if any
+    rootQuerySettings.caching = { ...ApiHooksCaching.systemDefaults, ...(config.queryConfig?.caching ?? {}) }
+    // apply application level mutation settings onto system level if any
+    const rootMutationSettings: UseMutationSettings<any> = { ...ApiHooksSystemSettings.systemDefaultMutation, ...(config.mutationConfig ?? {}) }
+    // apply application level request settings onto system level if any
+    const rootRequestSettings: UseRequestSettings<any> = { ...ApiHooksSystemSettings.systemDefaultRequest, ...(config.requestConfig ?? {}) }
+
+    return { rootQuerySettings, rootMutationSettings, rootRequestSettings }
+  }
+
+  /**
+   * The create function takes a single API client and returns the hooks, config dictionaries, and mock endpoints dictionary.
    * @param apiClient The API client to parse, must be an object containing controller objects with nested endpoint functions
    * @param config The application level config for the useQuery and useMutation hooks. Overrides the system config but can potentially be overridden at endpoint and hook level
    * @returns The hooks
@@ -949,14 +1014,8 @@ export namespace ApiHooks {
       log("API Hooks - creating hook/config library for (client/applicationConfig):", apiClient, config)
     }
 
-    // apply application level query settings onto system level if any
-    const rootQuerySettings: UseQueryConfigSettings<any, any> = { ...ApiHooksSystemSettings.systemDefaultQuery, ...(config.queryConfig ?? {}) }
-    // apply application level query caching settings onto system level if any
-    rootQuerySettings.caching = { ...ApiHooksCaching.systemDefaults, ...(config.queryConfig?.caching ?? {}) }
-    // apply application level mutation settings onto system level if any
-    const rootMutationSettings: UseMutationSettings<any> = { ...ApiHooksSystemSettings.systemDefaultMutation, ...(config.mutationConfig ?? {}) }
-    // apply application level request settings onto system level if any
-    const rootRequestSettings: UseRequestSettings<any> = { ...ApiHooksSystemSettings.systemDefaultRequest, ...(config.requestConfig ?? {}) }
+    // merge root level settings
+    const { rootQuerySettings, rootMutationSettings, rootRequestSettings } = mergeRootSettings(config)
 
     // create empty library or controller/endpoint objects to pass to settings factory and mock endpoint factory.
     const emptyHookConfigLibrary: HookConfigControllerLibrary<TApiClient> = createEmptyHookLibraryDefaults(apiClient)
@@ -975,5 +1034,61 @@ export namespace ApiHooks {
       newMemo[key] = createHooks(key, controller, rootQuerySettings, rootMutationSettings, rootRequestSettings, hookConfig[key], mockEndpoints[key], defaultData[key], config?.generalConfig)
       return newMemo
     }, {} as ControllerHooks<TApiClient>)
+  }
+
+  /**
+   * The create function takes a dictionary of API clients and returns the hooks, config dictionaries, and mock endpoints dictionary.
+   * @param apiClientDictionary A dictionary of API clients to parse, must be an object containing client key strings mapped to clients containing controller objects with nested endpoint functions
+   * @param config The application level config for the useQuery and useMutation hooks. Overrides the system config but can potentially be overridden at endpoint and hook level
+   * @returns The hooks
+   */
+  export function createMulti<TApiClientDictionary = any>(
+    apiClientDictionary: TApiClientDictionary,
+    config: CreationSettingsMulti<TApiClientDictionary, any> = {}
+  ): ControllerHooksMulti<TApiClientDictionary> {
+    if (config?.generalConfig?.debugMode) {
+      log('API Hooks - creating "multi" hook/config library for (client/applicationConfig):', apiClientDictionary, config)
+    }
+
+    // merge root level settings
+    const { rootQuerySettings, rootMutationSettings, rootRequestSettings } = mergeRootSettings(config)
+
+    // factory for creating a new empty library for endpoint level config
+    type GenericConfigLibrary =
+      | HookConfigControllerLibraryMulti<TApiClientDictionary>
+      | MockEndpointControllerLibraryMulti<TApiClientDictionary>
+      | DefaultDataControllerLibraryMulti<TApiClientDictionary>
+
+    const createEmptyLibrary = <T extends GenericConfigLibrary>(): T => {
+      return Object.keys(apiClientDictionary).reduce(
+        (finalLibrary, incomingClientKey) => ({ ...finalLibrary, [incomingClientKey]: createEmptyHookLibraryDefaults(apiClientDictionary[incomingClientKey]) }),
+        {} as T
+      )
+    }
+
+    // create empty library or controller/endpoint objects to pass to settings factory and mock endpoint factory.
+    const emptyHookConfigLibrary = createEmptyLibrary<HookConfigControllerLibraryMulti<TApiClientDictionary>>()
+    const emptyMockEndpointLibrary = createEmptyLibrary<MockEndpointControllerLibraryMulti<TApiClientDictionary>>()
+    const emptyDefaultDataLibrary = createEmptyLibrary<DefaultDataControllerLibraryMulti<TApiClientDictionary>>()
+
+    // create hook config object from factory function
+    const clientHookConfig = config?.hookConfigFactory?.(emptyHookConfigLibrary) ?? emptyHookConfigLibrary
+    const clientMockEndpoints = config?.mockEndpointFactory?.(emptyMockEndpointLibrary) ?? emptyMockEndpointLibrary
+    const clientDefaultData = config?.defaultDataFactory?.(emptyDefaultDataLibrary) ?? emptyDefaultDataLibrary
+
+    return Object.keys(apiClientDictionary).reduce<ControllerHooksMulti<TApiClientDictionary>>((clientMemo, clientKey) => {
+      const newClientMemo = { ...clientMemo }
+      const apiClient = apiClientDictionary[clientKey]
+      const hookConfig = clientHookConfig[clientKey]
+      const mockEndpoints = clientMockEndpoints[clientKey]
+      const defaultData = clientDefaultData[clientKey]
+      newClientMemo[clientKey] = Object.keys(apiClient).reduce((memo, key) => {
+        const newMemo = { ...memo }
+        const controller = apiClient[key]
+        newMemo[key] = createHooks(key, controller, rootQuerySettings, rootMutationSettings, rootRequestSettings, hookConfig[key], mockEndpoints[key], defaultData[key], config?.generalConfig)
+        return newMemo
+      }, {})
+      return newClientMemo
+    }, {} as ControllerHooksMulti<TApiClientDictionary>)
   }
 }

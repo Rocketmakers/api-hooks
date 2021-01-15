@@ -1,9 +1,15 @@
-import { ApiHooks } from "@rocketmakers/api-hooks"
-import { apiClient } from "../api/apiClient"
+import { ApiHooks, EndpointIDs } from "@rocketmakers/api-hooks"
+import { apiClient as notifyClient } from "../api/apiClient"
+import { apiClient as authClient } from "../api/apiClient"
 
-export const apiHooks = ApiHooks.create(apiClient, {
+
+
+
+export const apiHooks = ApiHooks.createMulti({
+  auth: authClient,
+  notify: notifyClient,
+}, {
   generalConfig: {
-    debugMode: true,
-    showMissingConfigWarnings: true,
-  },
+    debugMode: true
+  }
 })
