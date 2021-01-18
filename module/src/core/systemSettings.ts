@@ -1,4 +1,4 @@
-import { ApiHooks } from "./apiHooks"
+import { ApiHooks } from './apiHooks';
 
 /**
  * API Hooks
@@ -13,7 +13,7 @@ export namespace ApiHooksSystemSettings {
   /**
    * The system default useQuery config settings, can be overridden at application, endpoint and hook level.
    */
-  export const systemDefaultQuery: Partial<Omit<ApiHooks.UseQueryConfigSettings<any, any>, "parameters">> = {
+  export const systemDefaultQuery: Partial<Omit<ApiHooks.UseQueryConfigSettings<any, any>, 'parameters'>> = {
     /**
      * @default true
      * Queries will execute when the component mounts
@@ -39,12 +39,12 @@ export namespace ApiHooksSystemSettings {
      * A maximum of 5 states slices (with different parameters) will be stored per endpoint
      */
     maxCachingDepth: 5,
-  }
+  };
 
   /**
    * The system default useMutation settings, can be overridden at application, endpoint and hook level.
    */
-  export const systemDefaultMutation: Partial<Omit<ApiHooks.UseMutationSettings<any>, "parameters">> = {
+  export const systemDefaultMutation: Partial<Omit<ApiHooks.UseMutationSettings<any>, 'parameters'>> = {
     /**
      * @default false
      * Data in the live response from a mutation will be cleared on fetch
@@ -55,10 +55,10 @@ export namespace ApiHooksSystemSettings {
      * Errors from a mutation fetch will reject the promise rather than be swallowed by the hook
      */
     throwErrors: true,
-  }
+  };
 
   /**
    * The system default useRequest settings, can be overridden at application, endpoint and hook level.
    */
-  export const systemDefaultRequest: Partial<Omit<ApiHooks.UseRequestSettings<any>, "parameters">> = {}
+  export const systemDefaultRequest: Partial<Omit<ApiHooks.UseRequestSettings<any>, 'parameters'>> = {};
 }

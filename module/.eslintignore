@@ -1,0 +1,6 @@
+!**/*.ts*
+**/node_modules/
+node_modules
+dist
+*.gen.*
+*.generated.*

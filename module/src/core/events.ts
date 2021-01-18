@@ -1,4 +1,4 @@
-import { ApiHooksStore } from "./store"
+import { ApiHooksStore } from './store';
 /**
  * API Hooks - Events
  * ----------------
@@ -12,7 +12,7 @@ class EventManager<TCallback extends (...params: any) => any> {
   /**
    * The in-memory store for callback functions relating to this event
    */
-  private readonly store: TCallback[] = []
+  private readonly store: TCallback[] = [];
 
   /**
    * Checks whether a callback function exists in the store
@@ -20,7 +20,7 @@ class EventManager<TCallback extends (...params: any) => any> {
    * @returns a boolean - true if exists
    */
   private eventHookExists(callback: TCallback): boolean {
-    return this.store.some((storedCallback) => storedCallback === callback)
+    return this.store.some((storedCallback) => storedCallback === callback);
   }
 
   /**
@@ -28,7 +28,7 @@ class EventManager<TCallback extends (...params: any) => any> {
    * @returns a boolean - true if exists
    */
   public hasEventHooks(): boolean {
-    return !!this.store.length
+    return !!this.store.length;
   }
 
   /**
@@ -38,9 +38,9 @@ class EventManager<TCallback extends (...params: any) => any> {
    */
   public addEventHook(callback: TCallback) {
     if (!this.eventHookExists(callback)) {
-      this.store.push(callback)
+      this.store.push(callback);
     }
-    return () => this.removeEventHook(callback)
+    return () => this.removeEventHook(callback);
   }
 
   /**
@@ -49,7 +49,7 @@ class EventManager<TCallback extends (...params: any) => any> {
    */
   public removeEventHook(callback: TCallback) {
     if (this.eventHookExists(callback)) {
-      this.store.splice(this.store.indexOf(callback), 1)
+      this.store.splice(this.store.indexOf(callback), 1);
     }
   }
 
@@ -59,7 +59,7 @@ class EventManager<TCallback extends (...params: any) => any> {
    * @returns The return value of the final callback executed
    */
   public executeEventHooks(...args: Parameters<TCallback>): ReturnType<TCallback> {
-    return this.store.reduce((__, storedCallback) => storedCallback(...args), undefined)
+    return this.store.reduce((__, storedCallback) => storedCallback(...args), undefined);
   }
 }
 
@@ -70,11 +70,10 @@ class EventManager<TCallback extends (...params: any) => any> {
  * - Creates and exports an event manager for each event
  */
 export namespace ApiHooksEvents {
-
   /** TYPES */
 
-  export type OnBeforeInitialStateCallback = (testKeys?: ApiHooksStore.TestKeyState) => ApiHooksStore.State | undefined
-  export type OnStateUpdated = (state: ApiHooksStore.State, testKeys?: ApiHooksStore.TestKeyState) => void
+  export type OnBeforeInitialStateCallback = (testKeys?: ApiHooksStore.TestKeyState) => ApiHooksStore.State | undefined;
+  export type OnStateUpdated = (state: ApiHooksStore.State, testKeys?: ApiHooksStore.TestKeyState) => void;
 
   /** MANAGERS */
 
@@ -84,12 +83,12 @@ export namespace ApiHooksEvents {
    * - Callback can return an initial state dictionary to load on first render
    * - If multiple callbacks are registered to this event, the return value of the LAST one registered will be used as initial state.
    */
-  export const onBeforeInitialState = new EventManager<OnBeforeInitialStateCallback>()
+  export const onBeforeInitialState = new EventManager<OnBeforeInitialStateCallback>();
 
   /**
    * The "onStateUpdated" event is triggered every time the APIHooks state is changed.
    * - Callbacks will receive the state object that has just been updated.
    * - Caution: Callbacks registered to this event will be called frequently
    */
-  export const onStateUpdated = new EventManager<OnStateUpdated>()
+  export const onStateUpdated = new EventManager<OnStateUpdated>();
 }

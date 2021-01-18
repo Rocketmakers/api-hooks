@@ -1,0 +1,29 @@
+node_modules
+bin
+obj
+www
+vendor
+.DS_Store
+charts
+tmpcharts
+**/typings/graphql.tsx
+dist
+!backend/services/api/api/notifications/dist/*.ts
+node_modules
+*.dec
+*.swp
+.eslintcache
+.idea
+
+.decrypted~*
+
+# Graphql codegens
+**/*graphql.generated.ts*
+
+# Terraform
+.terraform
+*.tfplan
+
+# Frontend
+www
+clientApi.generated.ts

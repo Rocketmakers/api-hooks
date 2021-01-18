@@ -1,24 +1,26 @@
-import { ApiHooks } from "./apiHooks"
+import { ApiHooks } from './apiHooks';
 
 export namespace EndpointIDs {
   /** general utility type - represents a function  */
-  type AnyFunction = (param: any) => any
+  type AnyFunction = (param: any) => any;
 
   /** CREATION TYPES */
 
   /** The root type of the endpointIDs object, represents a dictionary of controllers */
-  type ControllerMethodsMulti<TApiClientDictionary> = { [TClientKey in keyof TApiClientDictionary]: ControllerMethods<TApiClientDictionary[TClientKey]> }
+  type ControllerMethodsMulti<TApiClientDictionary> = {
+    [TClientKey in keyof TApiClientDictionary]: ControllerMethods<TApiClientDictionary[TClientKey]>;
+  };
 
   /** The root type of the endpointIDs object, represents a dictionary of controllers */
-  type ControllerMethods<TApiClient> = { [TControllerKey in keyof TApiClient]: EndpointMethods<TApiClient[TControllerKey]> }
+  type ControllerMethods<TApiClient> = { [TControllerKey in keyof TApiClient]: EndpointMethods<TApiClient[TControllerKey]> };
 
   /** The type of the endpointID factory - receives optional caching config an returns a response object which can be used to identify this endpoint within global state */
-  type EndpointIDFactory = <TMutationParam>(config?: Config<TMutationParam>) => Response<TMutationParam>
+  type EndpointIDFactory = <TMutationParam>(config?: Config<TMutationParam>) => Response<TMutationParam>;
 
   /** The type applying the endpointID factory method to each controller endpoint. */
   type EndpointMethods<TApiController> = {
-    [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction ? EndpointIDFactory : never
-  }
+    [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction ? EndpointIDFactory : never;
+  };
 
   /** CACHE IDENTIFIER TYPES */
 
@@ -29,11 +31,11 @@ export namespace EndpointIDs {
     /**
      * (optional) The value used to cache data against. Allows a specific state slice to be identified within an endpoint's cache, overrides cacheKeyFromMutationParam
      */
-    cacheKeyValue?: string | number
+    cacheKeyValue?: string | number;
     /**
      * (optional) Allows the above cacheKeyValue to be derived from the parameter of a mutation.
      */
-    cacheKeyFromMutationParam?: ApiHooks.CacheKey<TMutationParam>
+    cacheKeyFromMutationParam?: ApiHooks.CacheKey<TMutationParam>;
   }
 
   /**
@@ -44,7 +46,7 @@ export namespace EndpointIDs {
     /**
      * The string used to identify the endpoint in global state.
      */
-    endpointHash: string
+    endpointHash: string;
   }
 
   /**
@@ -55,19 +57,19 @@ export namespace EndpointIDs {
   export function create<TApiClient = any>(apiClient: TApiClient): ControllerMethods<TApiClient> {
     // Reduce client controller dictionary into endpoint ID functions
     return Object.keys(apiClient).reduce<ControllerMethods<TApiClient>>((memo, controllerKey) => {
-      const newMemo = { ...memo }
-      const controller = apiClient[controllerKey]
+      const newMemo = { ...memo };
+      const controller = apiClient[controllerKey];
       newMemo[controllerKey] = Object.keys(controller).reduce<EndpointMethods<any>>((incomingControllerDictionary, endpointKey) => {
         // A string unique to the endpoint - combines the controller and endpoint names
-        const endpointHash = `${controllerKey}.${endpointKey}`
-        const controllerDictionary = { ...incomingControllerDictionary }
+        const endpointHash = `${controllerKey}.${endpointKey}`;
+        const controllerDictionary = { ...incomingControllerDictionary };
         controllerDictionary[endpointKey] = (config: Config<any>): Response<any> => {
-          return { endpointHash, ...config }
-        }
-        return controllerDictionary
-      }, {} as EndpointMethods<any>)
-      return newMemo
-    }, {} as ControllerMethods<TApiClient>)
+          return { endpointHash, ...config };
+        };
+        return controllerDictionary;
+      }, {} as EndpointMethods<any>);
+      return newMemo;
+    }, {} as ControllerMethods<TApiClient>);
   }
 
   /**
@@ -77,10 +79,10 @@ export namespace EndpointIDs {
    */
   export function createMulti<TApiClientDictionary = any>(apiClientDictionary: TApiClientDictionary): ControllerMethodsMulti<TApiClientDictionary> {
     return Object.keys(apiClientDictionary).reduce<ControllerMethodsMulti<TApiClientDictionary>>((memo, clientKey) => {
-      const newMemo = { ...memo }
-      const client = apiClientDictionary[clientKey]
-      newMemo[clientKey] = create(client)
-      return newMemo
-    }, {} as ControllerMethodsMulti<TApiClientDictionary>)
+      const newMemo = { ...memo };
+      const client = apiClientDictionary[clientKey];
+      newMemo[clientKey] = create(client);
+      return newMemo;
+    }, {} as ControllerMethodsMulti<TApiClientDictionary>);
   }
 }

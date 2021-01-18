@@ -1,6 +1,6 @@
-import { ApiHooksStore } from "./store"
-import { ApiHooks } from "./apiHooks"
-import { EndpointIDs } from "./endpointIDs"
+import { ApiHooksStore } from './store';
+import { ApiHooks } from './apiHooks';
+import { EndpointIDs } from './endpointIDs';
 
 /**
  * API Hooks - Caching
@@ -20,7 +20,7 @@ export namespace ApiHooksCaching {
    * - 'always' - essentially represents infinity
    * - 'never' - essentially represents 0
    */
-  export type Directive = number | "always" | "never"
+  export type Directive = number | 'always' | 'never';
 
   /**
    * Root type for the cache settings
@@ -29,25 +29,25 @@ export namespace ApiHooksCaching {
     /**
      * Cached data will be re-fetched when older than this value
      */
-    staleIfOlderThan?: Directive
+    staleIfOlderThan?: Directive;
     /**
      * Cached data will be available in error state if older than this value
      */
-    staleOnErrorIfOlderThan?: Directive
+    staleOnErrorIfOlderThan?: Directive;
     /**
      * If true - the stale data will still be available whilst the new data is being fetched
      */
-    fetchInBackground?: boolean
+    fetchInBackground?: boolean;
     /**
      * An optional array of params to mark as "bookmarks", meaning that if a request is made with a falsy value in one of these params, the value from the previous request will be used if it exists. This is useful primarily for paging cursors.
      */
-    bookmarkParameters?: (keyof TParam)[]
+    bookmarkParameters?: (keyof TParam)[];
   }
 
   /** CONSTANTS */
 
   /** The system default cache key for when one isn't passed via the settings. */
-  const defaultCacheKey = "all-data"
+  const defaultCacheKey = 'all-data';
 
   /** SETTINGS */
 
@@ -63,12 +63,12 @@ export namespace ApiHooksCaching {
     /**
      * 'never' - Cached data will always be used if the request is in an error state
      */
-    staleOnErrorIfOlderThan: "never",
+    staleOnErrorIfOlderThan: 'never',
     /**
      * true - Cached data will be available whilst the latest is being fetched - a spinner should be shown instead of the stale data where appropriate.
      */
     fetchInBackground: true,
-  }
+  };
 
   /** UTILITIES */
 
@@ -77,15 +77,15 @@ export namespace ApiHooksCaching {
    * Sorts the params and then stringifies
    * @param params The params to stringify
    */
-  export function hashParams<TParam extends {}>(params?: TParam): string {
+  export function hashParams<TParam>(params?: TParam): string {
     if (!params) {
-      return "{}"
+      return '{}';
     }
     return JSON.stringify(
       Object.keys(params)
         .sort()
         .reduce((memo, key) => ({ ...memo, [key]: params[key] }), {})
-    )
+    );
   }
 
   /**
@@ -93,14 +93,14 @@ export namespace ApiHooksCaching {
    * @param cacheKey The cacheKey value passed through settings
    * @param params The params of the request
    */
-  export function parseCacheKey<TParam extends {}>(params?: TParam, cacheKey?: ApiHooks.UseQuerySettings<TParam, any>["cacheKey"]): string {
+  export function parseCacheKey<TParam>(params?: TParam, cacheKey?: ApiHooks.UseQuerySettings<TParam, any>['cacheKey']): string {
     if (cacheKey && params) {
-      if (typeof cacheKey === "function") {
-        return cacheKey(params) ? String(cacheKey(params)) : defaultCacheKey
+      if (typeof cacheKey === 'function') {
+        return cacheKey(params) ? String(cacheKey(params)) : defaultCacheKey;
       }
-      return params[cacheKey] ? String(params[cacheKey]) : defaultCacheKey
+      return params[cacheKey] ? String(params[cacheKey]) : defaultCacheKey;
     }
-    return defaultCacheKey
+    return defaultCacheKey;
   }
 
   /**
@@ -108,8 +108,8 @@ export namespace ApiHooksCaching {
    * @param cacheKey The cacheKey value passed through settings
    * @param params The params of the request
    */
-  export function cacheKeyIsDefault<TParam extends {}>(params?: TParam, cacheKey?: ApiHooks.UseQuerySettings<TParam, any>["cacheKey"]): boolean {
-    return parseCacheKey(params, cacheKey) === defaultCacheKey
+  export function cacheKeyIsDefault<TParam>(params?: TParam, cacheKey?: ApiHooks.UseQuerySettings<TParam, any>['cacheKey']): boolean {
+    return parseCacheKey(params, cacheKey) === defaultCacheKey;
   }
 
   /**
@@ -119,15 +119,15 @@ export namespace ApiHooksCaching {
    */
   export function isStale<TData>(stateSlice: ApiHooksStore.StateSlice<TData>, directive: Directive) {
     if (stateSlice?.data) {
-      if (directive === "always") {
-        return true
+      if (directive === 'always') {
+        return true;
       }
-      if (directive === "never") {
-        return false
+      if (directive === 'never') {
+        return false;
       }
-      return stateSlice?.timestamp + directive < Date.now()
+      return stateSlice?.timestamp + directive < Date.now();
     }
-    return true
+    return true;
   }
 
   /**
@@ -137,32 +137,32 @@ export namespace ApiHooksCaching {
    * @param maxDepth The maximum number of entries allowed in a state slice (passed through from settings)
    */
   export function cleanEndpointDictionary<K extends keyof ApiHooksStore.State>(dictionary: ApiHooksStore.State[K], maxDepth: number) {
-    const newDictionary = { ...dictionary }
-    const keys = Object.keys(dictionary || {})
+    const newDictionary = { ...dictionary };
+    const keys = Object.keys(dictionary || {});
     if (keys.length > maxDepth) {
       const oldestKey = keys.reduce((memo, key) => {
         if (newDictionary[key].timestamp < newDictionary[memo].timestamp) {
-          return key
+          return key;
         }
-        return memo
-      }, keys[0])
-      delete newDictionary[oldestKey]
+        return memo;
+      }, keys[0]);
+      delete newDictionary[oldestKey];
     }
-    return newDictionary
+    return newDictionary;
   }
 
-  export function cacheKeyValueFromRefetchQuery<TParam extends {}>(params: TParam, refetchQuery: EndpointIDs.Response<TParam>): string | number {
+  export function cacheKeyValueFromRefetchQuery<TParam>(params: TParam, refetchQuery: EndpointIDs.Response<TParam>): string | number {
     if (refetchQuery.cacheKeyValue) {
-      return refetchQuery.cacheKeyValue
+      return refetchQuery.cacheKeyValue;
     }
     if (refetchQuery.cacheKeyFromMutationParam) {
-      const value = parseCacheKey(params, refetchQuery.cacheKeyFromMutationParam)
+      const value = parseCacheKey(params, refetchQuery.cacheKeyFromMutationParam);
       if (!value) {
-        throw new Error(`Invalid refetch query - mutation parameter ${refetchQuery.cacheKeyFromMutationParam} has no value!`)
+        throw new Error(`Invalid refetch query - mutation parameter ${refetchQuery.cacheKeyFromMutationParam} has no value!`);
       }
-      return value
+      return value;
     }
-    return undefined
+    return undefined;
   }
 
   /**
@@ -170,34 +170,34 @@ export namespace ApiHooksCaching {
    */
   export namespace Minutes {
     export function one() {
-      return 60 * 1000
+      return 60 * 1000;
     }
     export function five() {
-      return one() * 5
+      return one() * 5;
     }
     export function fifteen() {
-      return five() * 3
+      return five() * 3;
     }
     export function thirty() {
-      return fifteen() * 2
+      return fifteen() * 2;
     }
   }
 
   export namespace Hours {
     export function one() {
-      return Minutes.thirty() * 2
+      return Minutes.thirty() * 2;
     }
     export function five() {
-      return one() * 5
+      return one() * 5;
     }
   }
 
   export namespace Days {
     export function one() {
-      return Hours.one() * 24
+      return Hours.one() * 24;
     }
     export function seven() {
-      return one() * 7
+      return one() * 7;
     }
   }
 }
