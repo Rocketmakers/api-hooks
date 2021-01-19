@@ -5,11 +5,15 @@
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc --pretty --extendedDiagnostics -p src -d",
+    "copy-readme": "shx cp ../README.md .",
+    "build-ts": "tsc --pretty --extendedDiagnostics -p src -d",
+    "build": "npm run build-ts && npm run copy-readme",
     "link": "npm link",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --max-warnings=0 \"**/*.ts{,?}\" --cache --ignore-path .eslintignore --ext ts --ext tsx",
-    "lint-fix": "npm run lint -- --fix"
+    "lint-fix": "npm run lint -- --fix",
+    "prepublishOnly": "npm run lint && npm run build",
+    "publish": "npm publish"
   },
   "publishConfig": {
     "access": "public"
@@ -50,6 +54,7 @@
     "prettier": "^2.2.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
+    "shx": "^0.3.3",
     "tslib": "^2.1.0",
     "typescript": "^4.1.3"
   }

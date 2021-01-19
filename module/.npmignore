@@ -1,0 +1,7 @@
+src/
+.eslintrc.js
+.eslintcache
+.eslintignore
+.prettierignore
+.prettierrc.yaml
+.vscode
