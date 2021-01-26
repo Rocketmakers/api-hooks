@@ -12,8 +12,7 @@
     "postinstall": "(cd module && npm i) && (cd playground && npm i) && npm run link-api-hooks",
     "link-api-hooks": "(cd module && npm run build && npm run link) && (cd playground && npm run link-api-hooks)",
     "check-versions": "ncu && (cd module && ncu) && (cd playground && ncu)",
-    "upgrade-all": "ncu -u && (cd module && ncu -u) && (cd playground && ncu -u) && npm i",
-    "publish": "(cd module && npm publish)"
+    "upgrade-all": "ncu -u && (cd module && ncu -u) && (cd playground && ncu -u) && npm i"
   },
   "repository": {
     "type": "git",

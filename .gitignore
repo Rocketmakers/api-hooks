@@ -1,4 +1,4 @@
 node_modules
 dist
 www
-./module/README.md
+module/README.md
