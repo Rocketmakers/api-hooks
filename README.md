@@ -255,8 +255,137 @@ const MyComponent: React.FunctionComponent = () => {
   }, [searchUsers, setUserList])
 }
 ```
+
 NOTE:
-A `useQuery` would have worked here, and may have been more appropriate. `useRequest` exists as a way of accessing your API fetch methods in a way that bypasses most of the API Hooks functionality, kind of a "manual override."
+
+- A `useQuery` would have worked here, and may have been more appropriate. `useRequest` exists as a way of accessing your API fetch methods in a way that bypasses most of the API Hooks functionality, kind of a "manual override."
+- Unlike the other two hooks, the `useRequest` hook doesn't return an array for de-structuring. This is because the response is completely unprocessed, it only returns a function for accessing the raw API fetch method.
+
+---
+
+## Configuring API Hooks
+
+With a few exceptions, the configuration options for API Hooks can be applied at three different levels, with individual settings "falling back" to the higher level if they have not been defined at the lower level. These levels are, from top to bottom:
+
+1. `System Level` - The system level settings are applied by default and should not be changed directly, only overridden.
+2. `Application Level` - Application level settings will override the system level settings and apply to the entire application unless overridden lower down.
+3. `Endpoint Level` - Endpoint level settings will override the system and application level settings and apply to a single endpoint wherever it is used. (An "endpoint" in this definition means any function within a controller on your API Client, e.g. `firstController.getEndpoint`.)
+4. `Hook Level` - Hook level settings will override the three previous levels, and apply to one instance of `useQuery`, `useMutation` or `useRequest` _only_.
+5. `Fetch Level` - **some** settings (such as endpoint parameters) can be supplied when an invoke function is executed for one of the hooks. These settings will apply to that fetch only.
+
+NOTE: Settings that can be overridden are split into separate areas for the three different hooks, `query`, `mutation` and `request`. The application level also has some other settings which can **only** be set for the entire application.
+
+Let's take a single setting, in this case the `staleIfOlderThan` setting within the `caching` area of the `query` settings, and see how we apply a change at all of the different levels:
+
+## Configuring API Hooks - Application Level Settings
+
+Application level settings are passed into the `create` method used to initialize the API Hooks library, they are passed as an object to the second argument:
+
+```TypeScript
+import { APIHooks } from "@rocketmakers/api-hooks"
+import { apiClient } from "*API CLient location*"
+
+const apiHooks = APIHooks.create(apiClient, {
+  queryConfig: {
+    caching: {
+      staleIfOlderThan: 10000,
+    },
+  }
+})
+```
+
+## Configuring API Hooks - Endpoint level settings
+
+Endpoint level settings are applied by creating an "endpoint settings factory function" and passing it to the `hookConfigFactory` property on the config of `create`. It should look like this:
+
+```TypeScript
+import { APIHooks } from "@rocketmakers/api-hooks"
+import { apiClient } from "*API CLient location*"
+
+// this factory function can be in a different file for readability
+const myEndpointConfig: ApiHooks.HookConfigLibraryFactory<typeof apiClient> = (emptyConfig) => {
+  const endpointSettings = { ...emptyConfig }
+
+  // simply add a block like this for each endpoint you'd like to add settings to
+  endpointSettings.firstController.getEndpoint.query = {
+    caching: {
+      staleIfOlderThan: 10000
+    }
+  }
+
+  return endpointSettings
+}
+
+const apiHooks = APIHooks.create(apiClient, {
+  // pass your factory to the hookConfigFactory property
+  hookConfigFactory: myEndpointConfig
+})
+```
+
+## Configuring API Hooks - Hook Level Settings
+
+Hook level settings are simply passed into the hook at the point that it's being used, for example:
+
+```TypeScript
+import { apiHooks } from "*create method location*"
+
+const MyComponent: React.FunctionComponent = () => {
+
+  const [{data, isFetching}] = apiHooks.firstController.getEndpoint.useQuery({
+    caching: {
+      staleIfOlderThan: 10000
+    }
+  });
+
+}
+```
+
+## Quirks - Auto invoke held for cache key parameter
+
+It's often the case that a `useQuery` might need to `autoInvoke` in some cases and not others. As an example, say you're righting a user create/edit form, in "edit" mode, you'll need to query the existing user to edit, but in "create" mode, there's no query to run.
+
+In this case, you might think you'd need a pattern like this:
+
+```TypeScript
+/* THE HARD WAY OF DOING IT */
+import { apiHooks } from "*create method location*"
+
+const MyComponent: React.FunctionComponent<{ userId?: string }> = (props) => {
+
+  const [{data, isFetching}, getUserFetch] = apiHooks.users.getUser.useQuery({
+    autoInvoke: false,
+    cacheKey: 'userId'
+  });
+
+  React.useEffect(() => {
+    if(props.userId) {
+      getUserFetch({userId: props.userId})
+    }
+  }, [props.userId])
+
+}
+```
+This will work perfectly well, but it's a lot of faff. API Hooks has a hidden feature that will help you here:
+
+**If the parameter being used as the `cacheKey` is null or undefined, `autoInvoke` will *not* run on component load, but the query will run as soon as the parameter *becomes* defined.**
+
+So with that in mind, the above could just as easily be written like this:
+```TypeScript
+/* THE EASY WAY OF DOING IT */
+import { apiHooks } from "*create method location*"
+
+const MyComponent: React.FunctionComponent<{ userId?: string }> = (props) => {
+
+  // because "userId" is the cache key, the request will be "held" automatically if our prop isn't there.
+  const [{data, isFetching}] = apiHooks.users.getUser.useQuery({
+    cacheKey: 'userId',
+    parameters: { userId: props.userId }
+  });
+}
+```
+NOTE: If you really need to turn this functionality off, you can do this at any level via a query setting called `holdInvokeForCacheKeyParam`. (set it to `false`.)
+
+## Advanced Features - Testing - Mock endpoints
 
 
 # ... To be continued...
