@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { ApiHooks } from './apiHooks';
 import { ApiHooksCaching } from './caching';
+import { EndpointIDs } from './endpointIDs';
 import { ApiHooksEvents } from './events';
 /**
  * API Hooks - Store
@@ -378,5 +379,34 @@ export namespace ApiHooksStore {
     }, [state]);
 
     return <Context.Provider value={[state, dispatch, testKeys]}>{children}</Context.Provider>;
+  };
+
+  /**
+   * Function to reset cached state
+   * - **WARNING:** If no endpoint ID is passed **all state will be reset!**
+   * @param endpointId an optional endpoint ID object for resetting a specific endpoint or endpoint/cacheKey combination
+   */
+  type ResetFunction = (endpointId?: EndpointIDs.Response<never>) => void;
+
+  /**
+   * Hook used to reset cached state.
+   * @returns a function which can be used to reset cached state.
+   */
+  export const useReset = (): ResetFunction => {
+    const [, dispatch] = React.useContext(Context);
+
+    /**
+     * Function to reset cached state
+     * - **WARNING:** If no endpoint ID is passed **all state will be reset!**
+     * @param endpointId an optional endpoint ID object for resetting a specific endpoint or endpoint/cacheKey combination
+     */
+    const resetState = React.useCallback(
+      (endpointId?: EndpointIDs.Response<never>) => {
+        dispatch(Actions.reset(endpointId?.endpointHash, endpointId?.cacheKeyValue?.toString()));
+      },
+      [dispatch]
+    );
+
+    return resetState;
   };
 }

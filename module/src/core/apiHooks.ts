@@ -315,9 +315,9 @@ export namespace ApiHooks {
      */
     parameters?: TParam;
     /**
-     * An optional function to modify the payload stored for this endpoint, receives any stored data as well as the incoming data.
+     * An optional function to modify the payload stored for this endpoint, receives any stored data as well as the incoming data. Also receives previous params and new params
      */
-    payloadModifier?: (prevData: TResponse, newData: TResponse) => TResponse;
+    payloadModifier?: (prevData: TResponse, newData: TResponse, prevParams: TParam, newParams: TParam) => TResponse;
     /**
      * An optional object containing data to be used on first render, ideal for passing data for server-side rendering. NOTE: This will be ignored if the "default data" feature is in use.
      */
@@ -755,6 +755,9 @@ export namespace ApiHooks {
                   value = await promiseFactory(fetchSettings.parameters);
                 }
 
+                // store a copy of the previous fetch params before they get overwritten with the new ones
+                const previousParams = { ...(lastUsedSettings.current?.parameters ?? {}) };
+
                 // store the final settings for the processing hook
                 lastUsedSettings.current = fetchSettings;
 
@@ -766,7 +769,9 @@ export namespace ApiHooks {
                     endpointHash,
                     finalParamHash,
                     finalCacheKey,
-                    fetchSettings.payloadModifier ? fetchSettings.payloadModifier(storedStateSlice?.data, value) : value,
+                    fetchSettings.payloadModifier
+                      ? fetchSettings.payloadModifier(storedStateSlice?.data, value, previousParams, fetchSettings.parameters)
+                      : value,
                     fetchSettings.maxCachingDepth
                   )
                 );
