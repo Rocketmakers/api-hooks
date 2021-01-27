@@ -63,38 +63,38 @@ export namespace ApiHooks {
   ) => DefaultDataControllerLibrary<TApiClient>;
 
   /** The root type of the apiHooks "multi" object, represents a dictionary of api clients */
-  type ControllerHooksMulti<TApiClientDictionary, TProcessingResponse> = {
+  export type ControllerHooksMulti<TApiClientDictionary, TProcessingResponse> = {
     [TClientKey in keyof TApiClientDictionary]: ControllerHooks<TApiClientDictionary[TClientKey], TProcessingResponse>;
   };
 
   /** The root type of the apiHooks object, represents a dictionary of controllers */
-  type ControllerHooks<TApiClient, TProcessingResponse> = {
+  export type ControllerHooks<TApiClient, TProcessingResponse> = {
     [TControllerKey in keyof TApiClient]: EndpointHooks<TApiClient[TControllerKey], TProcessingResponse>;
   };
 
   /** The root type of the hookConfig "multi" object, represents a dictionary of api clients */
-  type HookConfigControllerLibraryMulti<TApiClientDictionary> = {
+  export type HookConfigControllerLibraryMulti<TApiClientDictionary> = {
     [TClientKey in keyof TApiClientDictionary]: HookConfigControllerLibrary<TApiClientDictionary[TClientKey]>;
   };
 
   /** The root type of the hookConfig object, represents a dictionary of controllers */
-  type HookConfigControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: HookEndpointConfig<TApiClient[TControllerKey]> };
+  export type HookConfigControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: HookEndpointConfig<TApiClient[TControllerKey]> };
 
   /** The root type of the mockEndpoint "multi" object, represents a dictionary of api clients */
-  type MockEndpointControllerLibraryMulti<TApiClientDictionary> = {
+  export type MockEndpointControllerLibraryMulti<TApiClientDictionary> = {
     [TClientKey in keyof TApiClientDictionary]: MockEndpointControllerLibrary<TApiClientDictionary[TClientKey]>;
   };
 
   /** The root type of the mockEndpoints object, represents a dictionary of controllers */
-  type MockEndpointControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: MockEndpointLibrary<TApiClient[TControllerKey]> };
+  export type MockEndpointControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: MockEndpointLibrary<TApiClient[TControllerKey]> };
 
   /** The root type of the defaultData "multi" object, represents a dictionary of api clients */
-  type DefaultDataControllerLibraryMulti<TApiClientDictionary> = {
+  export type DefaultDataControllerLibraryMulti<TApiClientDictionary> = {
     [TClientKey in keyof TApiClientDictionary]: DefaultDataControllerLibrary<TApiClientDictionary[TClientKey]>;
   };
 
   /** The root type of the defaultData object, represents a dictionary of controllers */
-  type DefaultDataControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: DefaultDataLibrary<TApiClient[TControllerKey]> };
+  export type DefaultDataControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: DefaultDataLibrary<TApiClient[TControllerKey]> };
 
   /**
    * Adds the three hooks to each endpoint within a controller (if it's a function within a controller, it's an endpoint)
@@ -102,7 +102,7 @@ export namespace ApiHooks {
    * @param useMutation The hook to be used if the endpoint is a POST/PUT/DELETE and we just need a fetcher and sone live, local state. without any caching.
    * @param useRequest The hook to be used for any request when we ONLY want the basic promise constructor, with no local state and no caching at all.
    */
-  type EndpointHooks<TApiController, TProcessingResponse> = {
+  export type EndpointHooks<TApiController, TProcessingResponse> = {
     [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction
       ? {
           useQuery: UseQuery<TApiController[TEndpointKey], TProcessingResponse>;
@@ -115,7 +115,7 @@ export namespace ApiHooks {
   /**
    * Adds the mock endpoint constructor to each endpoint within a controller (if it's a function within a controller, it's an endpoint)
    */
-  type MockEndpointLibrary<TApiController> = {
+  export type MockEndpointLibrary<TApiController> = {
     [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction
       ? (arg: FirstParamOf<TApiController[TEndpointKey]>, testKey: string) => ReturnType<TApiController[TEndpointKey]>
       : never;
@@ -124,7 +124,7 @@ export namespace ApiHooks {
   /**
    * Adds the default data constructor to each endpoint within a controller (if it's a function within a controller, it's an endpoint)
    */
-  type DefaultDataLibrary<TApiController> = {
+  export type DefaultDataLibrary<TApiController> = {
     [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction
       ? (arg: FirstParamOf<TApiController[TEndpointKey]>) => PromiseResult<ReturnType<TApiController[TEndpointKey]>>
       : never;
@@ -178,7 +178,7 @@ export namespace ApiHooks {
   /**
    * Type denoting the settings object passed to the create method.
    */
-  interface CreationSettings<TApiClient, TParam, TProcessingResponse> extends CreatingSettingsBase<TParam> {
+  export interface CreationSettings<TApiClient, TParam, TProcessingResponse> extends CreatingSettingsBase<TParam> {
     /**
      * The factory function that creates the hook config library
      */
@@ -207,7 +207,7 @@ export namespace ApiHooks {
   /**
    * Type denoting the settings object passed to the createMulti method.
    */
-  interface CreationSettingsMulti<TApiClientDictionary, TParam> extends CreatingSettingsBase<TParam> {
+  export interface CreationSettingsMulti<TApiClientDictionary, TParam> extends CreatingSettingsBase<TParam> {
     /**
      * The factory function that creates the hook config library
      */
@@ -221,7 +221,7 @@ export namespace ApiHooks {
      */
     defaultDataFactory?: DefaultDataLibraryFactoryMulti<TApiClientDictionary>;
   }
-  interface GeneralConfig {
+  export interface GeneralConfig {
     /**
      * Switches on verbose console output for debugging purposes
      */
