@@ -58,13 +58,17 @@ ReactDOM.render(
 Getting the core hook library up and running is as simple as calling the `create` method and passing an API Client object (described above):
 
 ```TypeScript
-import { APIHooks } from "@rocketmakers/api-hooks"
+import { APIHooks, EndpointIDs } from "@rocketmakers/api-hooks"
 import { apiClient } from "*API CLient location*"
 
-const apiHooks = APIHooks.create(apiClient)
+export const apiHooks = APIHooks.create(apiClient)
+export const endpointIds = EndpointIds.create(apiClient)
+
 ```
 
 The `apiHooks` constant above now contains a library of React hooks contained within an object structure that matches the controller/endpoint structure of your API Client.
+
+NOTE: The `endpointIds` constant is a library of strictly types identifiers designed for use with some of API Hooks' more advanced features (such as `mock endpoints` and `refetch queries`.) It's not required for the basic hooks to work, so feel free to add it later if/when you need it.
 
 ---
 
@@ -277,6 +281,8 @@ NOTE: Settings that can be overridden are split into separate areas for the thre
 
 Let's take a single setting, in this case the `staleIfOlderThan` setting within the `caching` area of the `query` settings, and see how we apply a change at all of the different levels:
 
+---
+
 ## Configuring API Hooks - Application Level Settings
 
 Application level settings are passed into the `create` method used to initialize the API Hooks library, they are passed as an object to the second argument:
@@ -293,6 +299,8 @@ const apiHooks = APIHooks.create(apiClient, {
   }
 })
 ```
+
+---
 
 ## Configuring API Hooks - Endpoint level settings
 
@@ -322,6 +330,8 @@ const apiHooks = APIHooks.create(apiClient, {
 })
 ```
 
+---
+
 ## Configuring API Hooks - Hook Level Settings
 
 Hook level settings are simply passed into the hook at the point that it's being used, for example:
@@ -339,6 +349,8 @@ const MyComponent: React.FunctionComponent = () => {
 
 }
 ```
+
+---
 
 ## Quirks - Auto invoke held for cache key parameter
 
@@ -365,11 +377,13 @@ const MyComponent: React.FunctionComponent<{ userId?: string }> = (props) => {
 
 }
 ```
+
 This will work perfectly well, but it's a lot of faff. API Hooks has a hidden feature that will help you here:
 
-**If the parameter being used as the `cacheKey` is null or undefined, `autoInvoke` will *not* run on component load, but the query will run as soon as the parameter *becomes* defined.**
+**If the parameter being used as the `cacheKey` is null or undefined, `autoInvoke` will _not_ run on component load, but the query will run as soon as the parameter _becomes_ defined.**
 
 So with that in mind, the above could just as easily be written like this:
+
 ```TypeScript
 /* THE EASY WAY OF DOING IT */
 import { apiHooks } from "*create method location*"
@@ -383,9 +397,151 @@ const MyComponent: React.FunctionComponent<{ userId?: string }> = (props) => {
   });
 }
 ```
+
 NOTE: If you really need to turn this functionality off, you can do this at any level via a query setting called `holdInvokeForCacheKeyParam`. (set it to `false`.)
 
-## Advanced Features - Testing - Mock endpoints
+---
 
+## Testing - Mock endpoints
+
+For testing or developing purposes, it's sometimes helpful to bypass the API and return some "canned" data instead. With API Hooks, you can override the fetch method in your API client without needing to make any changes at component level. Here's how it's done:
+
+A library of mock endpoints can be created in a similar way to endpoint level config, using a factory function:
+
+```TypeScript
+import { APIHooks } from "@rocketmakers/api-hooks"
+import { apiClient } from "*API CLient location*"
+
+// this factory function can be in a different file for readability
+const myMockEndpoints: ApiHooks.MockEndpointLibraryFactory<typeof apiClient> = (emptyLibrary) => {
+  const mockEndpoints = { ...emptyLibrary }
+
+  // simply add a block like this for each endpoint you'd like to mock
+  mockEndpoints.exampleQueries.getUser = async (params, testKeys) => {
+    return {
+      id: params.id,
+      email: "example.user@example.com",
+      firstName: "Example",
+      lastName: "User",
+    }
+  }
+
+  return mockEndpoints
+}
+
+const apiHooks = APIHooks.create(apiClient, {
+  // pass your factory to the mockEndpointFactory property
+  mockEndpointFactory: myMockEndpoints
+})
+```
+
+When the "mock endpoints" feature is active, the endpoints you define in this way will be called in place of the real endpoint in your API Client. The mock endpoint will be sent the parameters used with the API Hooks that has triggered the request, these parameters can then be used in the canned response as shown above.
+
+There are two ways to activate the "mock endpoints" feature:
+
+### 1. The global setting
+
+Via a setting in both query config and mutation config called `useMockEndpoints`. This can be set at application, endpoint or hook level, depending on your needs. NOTE: This setting should _always_ be false in a production environment
+
+### 2. Using "test keys"
+
+If you're using an automated testing library, you can also activate mock endpoints by passing a dictionary of test keys into the API Hooks provider. A test key is a string associated with a specific endpoint, this string will be passed to the mock endpoint as the second argument (after the parameters) and can be used to customize the response from the mock endpoint based on the test that's being executed.
+
+Here's an example:
+
+```TypeScript
+/**
+  * This object will likely be created inside an automated test
+  * and passed into the app render dynamically
+  */
+const testKeys: ApiHooksStore.TestKeyState = {
+  [endpointIds.exampleQueries.getUserList().endpointHash]: { testKey: "UserScreenTest" },
+  [endpointIds.exampleQueries.getUser().endpointHash]: { testKey: "UserScreenTest" },
+}
+
+return (
+  <ApiHooksStore.Provider testKeys={testKeys}>
+    {/* my app... */}
+  </ApiHooksStore.Provider>
+)
+```
+
+The presence of the `testKeys` prop will inform API Hooks that we're in an automated test environment, and mock endpoints will be activated for the entire application preventing the real API from being used. In the above example, the `UserScreenTest` key will then be passed to the associated mock endpoints like this:
+
+```TypeScript
+mockEndpoints.exampleQueries.getUser = async (params, testKey) => {
+  switch(testKey) {
+    case "UserScreenTest":
+      return {
+        ...
+      }
+  }
+}
+```
+
+---
+
+## Advanced features - Refetch Queries
+
+Because the results of `useQuery` are cached, it's often necessary to make sure cached data doesn't hang around once we _know_ it's been changed, like after a `useMutation` for example. API Hooks has a dedicated solution for managing this called `refetchQueries`.
+
+Here are some examples:
+
+## Endpoint level refetch - "Whenever I create/update a user, I want to make sure my user cache is up to date"
+
+```TypeScript
+import { APIHooks } from "@rocketmakers/api-hooks"
+import { apiClient } from "*API CLient location*"
+
+// this factory function can be in a different file for readability
+const myEndpointConfig: ApiHooks.HookConfigLibraryFactory<typeof apiClient> = (emptyConfig) => {
+  const endpointSettings = { ...emptyConfig }
+
+  endpointSettings.exampleQueries.getUser.query = {
+    cacheKey: "id",
+  }
+
+  endpointSettings.exampleMutations.updateUser.mutation = {
+    refetchQueries: [
+      endpointIds.exampleQueries.getUser({ cacheKeyFromMutationParam: "id" }),
+      endpointIds.exampleQueries.getUserList()
+    ],
+  }
+
+    endpointSettings.exampleMutations.addUser.mutation = {
+    refetchQueries: [
+      endpointIds.exampleQueries.getUserList()
+    ],
+  }
+
+  return endpointSettings
+}
+
+const apiHooks = APIHooks.create(apiClient, {
+  // pass your factory to the hookConfigFactory property
+  hookConfigFactory: myEndpointConfig
+})
+```
+
+Let's unpack what's happening here:
+
+1. Whenever `updateUser` successfully runs from a `useMutation` hook, all cache associated with the `getUserList` query will be invalidated, and so will all cache stored by `getUser` with a `cacheKey` that matches the `id` parameter sent to the `updateUser` mutation. To explain this further, if user `24` is updated for example, then all cache associated with user `24` will be invalidated, but cache stored by `getUser` relating to other user IDs will remain unaffected.
+2. Whenever `addUser` successfully runs from a `useMutation` hook, all cache associated with the `getUserList` will be invalidated.
+
+NOTE:
+
+- What does it meant when we say cache is "invalidated"? If there is a component rendered with a `useQuery` referencing the invalidated cache, then a new request for the data will fire immediately once the associated mutation is successful. If there is _not_ a component rendered with a `useQuery` referencing the invalidated cache, then any stored cache will simply be marked as invalid so that a new request will be fired in the event that a `useQuery` is mounted that references it.
+- The config in the above example is defined at "endpoint level", meaning that these behaviors will apply to all associated hooks throughout the application. This is the recommended approach for `cacheKey` and `refetchQuery` config, because it means we don't need to remember to add these settings in every component which references this data. If need be though, all of this config can also be passed at "hook level."
+- As well as `cacheKeyFromMutationParam`, a refetch query can also be defined with a `cacheKeyValue` property containing a hard value for the `cacheKey` to invalidate, this is more commonly used at "hook level" rather than endpoint level.
+- If your `cacheKeyFromMutationParam` is inside an object being passed to the mutation, rather than a top level parameter, a function can also be passed to retrieve it, just like a normal `cacheKey`, for example:
+
+```TypeScript
+endpointSettings.exampleMutations.updateUser.mutation = {
+    refetchQueries: [
+      endpointIds.exampleQueries.getUser({ cacheKeyFromMutationParam: data => data.user.id }),
+      endpointIds.exampleQueries.getUserList()
+    ],
+  }
+```
 
 # ... To be continued...
