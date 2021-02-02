@@ -115,6 +115,10 @@ export namespace ApiHooksStore {
        *  The maximum number of data sets to store for an endpoint - comes from a query config setting
        */
       paramHash: string;
+      /**
+       *  Whether to update state without triggering a re-render (Use with caution!)
+       */
+      isSilent: boolean;
     }
 
     /**
@@ -188,9 +192,18 @@ export namespace ApiHooksStore {
       paramHash: string,
       cacheKeyValue: string,
       mode: ApiHooks.FetchingMode,
-      maxCachingDepth: number
+      maxCachingDepth: number,
+      isSilent = false
     ): React.ReducerAction<React.Reducer<State, GenericAction>> {
-      return { status: stateSliceStatusFromFetchingMode(mode), endpointKey, cacheKeyValue, paramHash, maxCachingDepth, shouldRefetchData: false };
+      return {
+        status: stateSliceStatusFromFetchingMode(mode),
+        endpointKey,
+        cacheKeyValue,
+        paramHash,
+        maxCachingDepth,
+        shouldRefetchData: false,
+        isSilent,
+      };
     }
 
     /**
@@ -200,6 +213,7 @@ export namespace ApiHooksStore {
      * @param cacheKeyValue A key to cache the data by - each unique key will represent a different state slice in the dictionary.
      * @param data The data returned from the request
      * @param maxCachingDepth The maximum number of data sets to store for an endpoint - comes from a query config setting
+     * @param isSilentLoad Setting this to "true"
      * @returns An action object to be dispatched
      */
     export function loaded<TData>(
@@ -207,7 +221,8 @@ export namespace ApiHooksStore {
       paramHash: string,
       cacheKeyValue: string,
       data: TData,
-      maxCachingDepth: number
+      maxCachingDepth: number,
+      isSilent = false
     ): React.ReducerAction<React.Reducer<State, GenericAction>> {
       return {
         status: 'loaded',
@@ -219,6 +234,7 @@ export namespace ApiHooksStore {
         maxCachingDepth,
         error: undefined,
         shouldRefetchData: false,
+        isSilent,
       };
     }
 
@@ -236,9 +252,10 @@ export namespace ApiHooksStore {
       paramHash: string,
       cacheKeyValue: string,
       requestError: any,
-      maxCachingDepth: number
+      maxCachingDepth: number,
+      isSilent = false
     ): React.ReducerAction<React.Reducer<State, GenericAction>> {
-      return { status: 'error', endpointKey, cacheKeyValue, paramHash, error: requestError, maxCachingDepth };
+      return { status: 'error', endpointKey, cacheKeyValue, paramHash, error: requestError, maxCachingDepth, isSilent };
     }
 
     /**
@@ -324,7 +341,18 @@ export namespace ApiHooksStore {
       return state;
     }
     // rebuild the state object by applying changes from the action to the current state
-    const { endpointKey, cacheKeyValue, maxCachingDepth, ...stateSlice } = action;
+    const { endpointKey, cacheKeyValue, maxCachingDepth, isSilent, ...stateSlice } = action;
+    if (isSilent) {
+      /* eslint-disable no-param-reassign */
+      state[endpointKey] = state[endpointKey] ?? {};
+      state[endpointKey][cacheKeyValue] = state[endpointKey][cacheKeyValue] ?? { paramHash: stateSlice.paramHash };
+      Object.keys(stateSlice).forEach((stateSliceKey) => {
+        state[endpointKey][cacheKeyValue][stateSliceKey] = stateSlice[stateSliceKey];
+      });
+      state[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(state[endpointKey], maxCachingDepth);
+      /* eslint-enable no-param-reassign */
+      return state;
+    }
     const newState = {
       ...state,
       [endpointKey]: {

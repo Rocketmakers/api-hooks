@@ -675,6 +675,23 @@ export namespace ApiHooks {
             return currentStoredStateSlice;
           }, [state[endpointHash], cacheKey, settingsFromHook]);
 
+          React.useLayoutEffect(() => {
+            if (storedStateSlice && !state[endpointHash]?.[cacheKey]) {
+              // To get here, we must have returned some default data that isn't stored in cache. We need to store it now.
+              queryLog(`Storing initial data in cache`, { state: storedStateSlice });
+              dispatch(
+                ApiHooksStore.Actions.loaded(
+                  endpointHash,
+                  storedStateSlice.paramHash,
+                  cacheKey,
+                  storedStateSlice.data,
+                  settingsFromHook.maxCachingDepth,
+                  true
+                )
+              );
+            }
+          }, [state[endpointHash], cacheKey, storedStateSlice]);
+
           /** CACHE READER */
 
           // value - create the data value to return from the state slice, this respects the caching settings to decide whether to return the actual data, but always returns any error or fetching status.
@@ -929,7 +946,7 @@ export namespace ApiHooks {
           const processed = processingHook?.('query', valueToReturn.data, valueToReturn.fetchingMode, lastUsedSettings.current);
           React.useEffect(() => {
             if (processingHook) {
-              mutationLog(`Processing hook executed`, { hookType: 'query', data: storedStateSlice?.data, processed });
+              queryLog(`Processing hook executed`, { hookType: 'query', data: storedStateSlice?.data, processed });
             }
           }, [storedStateSlice?.data]);
 
