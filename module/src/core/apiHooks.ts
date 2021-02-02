@@ -322,6 +322,10 @@ export namespace ApiHooks {
      * An optional object containing data to be used on first render, ideal for passing data for server-side rendering. NOTE: This will be ignored if the "default data" feature is in use.
      */
     initialData?: TResponse;
+    /**
+     * By default, the system will block any request with the same endpoint/cacheKey whilst a request is already in progress. Setting this to true will override that behaviour and allow both requests to fire.
+     */
+    allowSimultaneousRequests?: boolean;
   }
 
   /**
@@ -726,7 +730,7 @@ export namespace ApiHooks {
               setCacheKey(finalCacheKey);
 
               // check the global live fetching log to avoid simultaneous requests being fired before react has processed the state changes.
-              if (ApiHooksGlobal.isFetching(endpointHash, finalCacheKey)) {
+              if (ApiHooksGlobal.isFetching(endpointHash, finalCacheKey) && !fetchSettings.allowSimultaneousRequests) {
                 queryLog('Fetching aborted, request already in progress', {
                   settings: fetchSettings,
                   paramHash: finalParamHash,

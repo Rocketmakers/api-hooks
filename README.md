@@ -44,13 +44,13 @@ First of all, you'll need to import the API Hooks provider component and wrap th
 
 ```TypeScript
 import * as ReactDOM from "react-dom"
-import { APIHooksStore } from "@rocketmakers/api-hooks"
+import { ApiHooksStore } from "@rocketmakers/api-hooks"
 import { AppComponent } from "*Root app component location*"
 
 ReactDOM.render(
-  <APIHooksStore.Provider>
+  <ApiHooksStore.Provider>
     <AppComponent />
-  </APIHooksStore.Provider>,
+  </ApiHooksStore.Provider>,
   document.getElementById("host"))
 )
 ```
@@ -58,10 +58,10 @@ ReactDOM.render(
 Getting the core hook library up and running is as simple as calling the `create` method and passing an API Client object (described above):
 
 ```TypeScript
-import { APIHooks, EndpointIDs } from "@rocketmakers/api-hooks"
+import { ApiHooks, EndpointIDs } from "@rocketmakers/api-hooks"
 import { apiClient } from "*API CLient location*"
 
-export const apiHooks = APIHooks.create(apiClient)
+export const apiHooks = ApiHooks.create(apiClient)
 export const endpointIds = EndpointIds.create(apiClient)
 
 ```
@@ -76,7 +76,7 @@ NOTE: The `endpointIds` constant is a library of strictly types identifiers desi
 
 The library consists of three hooks that offer different interactions with your API. Each hook can be accessed by navigating through the controller and endpoint structure of your API client, using the result of the API Hooks `create` method as a starting point.
 
-For example, if you stored the result of the `create` method in a constant called `apiHooks`, like the above example, that constant can now be imported and used in any component, as long as that component is rendered anywhere within the `APIHooksStore.Provider` component:
+For example, if you stored the result of the `create` method in a constant called `apiHooks`, like the above example, that constant can now be imported and used in any component, as long as that component is rendered anywhere within the `ApiHooksStore.Provider` component:
 
 ```TypeScript
 import { apiHooks } from "*create method location*"
@@ -211,7 +211,7 @@ NOTE:
 - Parameters can be passed into the hook with the `parameters` property, just like a query, but with a mutation it's more common to pass the parameters to the invoke method.
 - Parameters can also be split between the hook and the invoke method, with some going into the hook `parameters` property, and the rest going into the invoke method at fetch time.
 
-## Chaining two mutations, using a property of the response from A to call B.
+### Chaining two mutations, using a property of the response from A to call B.
 
 ```TypeScript
 import { apiHooks } from "*create method location*"
@@ -288,10 +288,10 @@ Let's take a single setting, in this case the `staleIfOlderThan` setting within 
 Application level settings are passed into the `create` method used to initialize the API Hooks library, they are passed as an object to the second argument:
 
 ```TypeScript
-import { APIHooks } from "@rocketmakers/api-hooks"
+import { ApiHooks } from "@rocketmakers/api-hooks"
 import { apiClient } from "*API CLient location*"
 
-const apiHooks = APIHooks.create(apiClient, {
+const apiHooks = ApiHooks.create(apiClient, {
   queryConfig: {
     caching: {
       staleIfOlderThan: 10000,
@@ -307,7 +307,7 @@ const apiHooks = APIHooks.create(apiClient, {
 Endpoint level settings are applied by creating an "endpoint settings factory function" and passing it to the `hookConfigFactory` property on the config of `create`. It should look like this:
 
 ```TypeScript
-import { APIHooks } from "@rocketmakers/api-hooks"
+import { ApiHooks } from "@rocketmakers/api-hooks"
 import { apiClient } from "*API CLient location*"
 
 // this factory function can be in a different file for readability
@@ -324,7 +324,7 @@ const myEndpointConfig: ApiHooks.HookConfigLibraryFactory<typeof apiClient> = (e
   return endpointSettings
 }
 
-const apiHooks = APIHooks.create(apiClient, {
+const apiHooks = ApiHooks.create(apiClient, {
   // pass your factory to the hookConfigFactory property
   hookConfigFactory: myEndpointConfig
 })
@@ -409,7 +409,7 @@ For testing or developing purposes, it's sometimes helpful to bypass the API and
 A library of mock endpoints can be created in a similar way to endpoint level config, using a factory function:
 
 ```TypeScript
-import { APIHooks } from "@rocketmakers/api-hooks"
+import { ApiHooks } from "@rocketmakers/api-hooks"
 import { apiClient } from "*API CLient location*"
 
 // this factory function can be in a different file for readability
@@ -429,7 +429,7 @@ const myMockEndpoints: ApiHooks.MockEndpointLibraryFactory<typeof apiClient> = (
   return mockEndpoints
 }
 
-const apiHooks = APIHooks.create(apiClient, {
+const apiHooks = ApiHooks.create(apiClient, {
   // pass your factory to the mockEndpointFactory property
   mockEndpointFactory: myMockEndpoints
 })
@@ -487,10 +487,10 @@ Because the results of `useQuery` are cached, it's often necessary to make sure 
 
 Here are some examples:
 
-## Endpoint level refetch - "Whenever I create/update a user, I want to make sure my user cache is up to date"
+### Endpoint level refetch - "Whenever I create/update a user, I want to make sure my user cache is up to date"
 
 ```TypeScript
-import { APIHooks } from "@rocketmakers/api-hooks"
+import { ApiHooks } from "@rocketmakers/api-hooks"
 import { apiClient } from "*API CLient location*"
 
 // this factory function can be in a different file for readability
@@ -517,7 +517,7 @@ const myEndpointConfig: ApiHooks.HookConfigLibraryFactory<typeof apiClient> = (e
   return endpointSettings
 }
 
-const apiHooks = APIHooks.create(apiClient, {
+const apiHooks = ApiHooks.create(apiClient, {
   // pass your factory to the hookConfigFactory property
   hookConfigFactory: myEndpointConfig
 })
@@ -530,7 +530,7 @@ Let's unpack what's happening here:
 
 NOTE:
 
-- What does it meant when we say cache is "invalidated"? If there is a component rendered with a `useQuery` referencing the invalidated cache, then a new request for the data will fire immediately once the associated mutation is successful. If there is _not_ a component rendered with a `useQuery` referencing the invalidated cache, then any stored cache will simply be marked as invalid so that a new request will be fired in the event that a `useQuery` is mounted that references it.
+- What does it mean when we say cache is "invalidated"? If there is a component rendered with a `useQuery` referencing the invalidated cache, then a new request for the data will fire immediately once the associated mutation is successful. If there is _not_ a component rendered with a `useQuery` referencing the invalidated cache, then any stored cache will simply be marked as invalid so that a new request will be fired in the event that a `useQuery` is mounted that references it.
 - The config in the above example is defined at "endpoint level", meaning that these behaviors will apply to all associated hooks throughout the application. This is the recommended approach for `cacheKey` and `refetchQuery` config, because it means we don't need to remember to add these settings in every component which references this data. If need be though, all of this config can also be passed at "hook level."
 - As well as `cacheKeyFromMutationParam`, a refetch query can also be defined with a `cacheKeyValue` property containing a hard value for the `cacheKey` to invalidate, this is more commonly used at "hook level" rather than endpoint level.
 - If your `cacheKeyFromMutationParam` is inside an object being passed to the mutation, rather than a top level parameter, a function can also be passed to retrieve it, just like a normal `cacheKey`, for example:
@@ -543,5 +543,15 @@ endpointSettings.exampleMutations.updateUser.mutation = {
     ],
   }
 ```
+
+---
+
+## Advanced features - Default Data
+
+Sometimes it's useful to supply a `useQuery` hook with data to show on the first render of the app, before any requests are made to the server. This is particularly useful for isomorphic applications that are rendered synchronously on the server using data that has already been retrieved.
+
+API Hooks provides two ways of achieving this:
+
+
 
 # ... To be continued...
