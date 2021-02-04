@@ -93,10 +93,11 @@ export namespace ApiHooksCaching {
    * @param cacheKey The cacheKey value passed through settings
    * @param params The params of the request
    */
-  export function parseCacheKey<TParam>(params?: TParam, cacheKey?: ApiHooks.UseQuerySettings<TParam, any>['cacheKey']): string {
+  export function parseCacheKey<TParam>(params?: TParam, cacheKey?: ApiHooks.UseQuerySettings<TParam, any>['cacheKey'], context?: any): string {
     if (cacheKey && params) {
       if (typeof cacheKey === 'function') {
-        return cacheKey(params) ? String(cacheKey(params)) : defaultCacheKey;
+        const finalKey = cacheKey(params, context);
+        return finalKey ? String(finalKey) : defaultCacheKey;
       }
       return params[cacheKey] ? String(params[cacheKey]) : defaultCacheKey;
     }
@@ -151,12 +152,12 @@ export namespace ApiHooksCaching {
     return newDictionary;
   }
 
-  export function cacheKeyValueFromRefetchQuery<TParam>(params: TParam, refetchQuery: EndpointIDs.Response<TParam>): string | number {
+  export function cacheKeyValueFromRefetchQuery<TParam>(params: TParam, refetchQuery: EndpointIDs.Response<TParam>, context?: any): string | number {
     if (refetchQuery.cacheKeyValue) {
       return refetchQuery.cacheKeyValue;
     }
     if (refetchQuery.cacheKeyFromMutationParam) {
-      const value = parseCacheKey(params, refetchQuery.cacheKeyFromMutationParam);
+      const value = parseCacheKey(params, refetchQuery.cacheKeyFromMutationParam, context);
       if (!value) {
         throw new Error(`Invalid refetch query - mutation parameter ${refetchQuery.cacheKeyFromMutationParam} has no value!`);
       }

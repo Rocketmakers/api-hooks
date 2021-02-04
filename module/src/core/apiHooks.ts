@@ -251,7 +251,7 @@ export namespace ApiHooks {
 
   /** CACHE KEY TYPES */
 
-  export type CacheKey<TParam> = keyof TParam | ((param: TParam) => string | number);
+  export type CacheKey<TParam> = keyof TParam | ((param: TParam, context?: any) => string | number);
 
   /** USE QUERY TYPES */
 
@@ -400,6 +400,10 @@ export namespace ApiHooks {
      * A set of endpoint IDs denoting queries to be re-fetched after the mutation has happened.
      */
     refetchQueries?: EndpointIDs.Response<TParam>[];
+    /**
+     * An optional piece of data to send to endpoint level refetch queries in order to form a cache key.
+     */
+    refetchQueryContext?: any;
   }
 
   /** USE REQUEST TYPES */
@@ -780,7 +784,7 @@ export namespace ApiHooks {
                 const previousParams = { ...(lastUsedSettings.current?.parameters ?? {}) };
 
                 // store the final settings for the processing hook
-                lastUsedSettings.current = fetchSettings;
+                lastUsedSettings.current = { ...fetchSettings };
 
                 // send the data to the store by despatching the loaded action
                 queryLog('Fetch successful, with result:', value);
@@ -928,8 +932,8 @@ export namespace ApiHooks {
           React.useEffect(() => {
             if (!isFirstRender.current) {
               if (storedStateSlice?.shouldRefetchData) {
-                queryLog('Cache reset - refetch triggered', { parameters: lastUsedSettings.current.parameters });
-                invoke(lastUsedSettings.current.parameters, undefined, 'refetch');
+                queryLog('Cache reset - refetch triggered', { parameters: lastUsedSettings.current?.parameters });
+                invoke(lastUsedSettings.current?.parameters, undefined, 'refetch');
               }
             }
           }, [!!storedStateSlice?.shouldRefetchData]);
@@ -984,7 +988,7 @@ export namespace ApiHooks {
 
           // settings - apply the hook execution settings (if any) to the passed in system, application and endpoint level.
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
-          const settingsFromHook = React.useMemo<UseQueryConfigSettings<any, any>>(() => {
+          const settingsFromHook = React.useMemo<UseMutationSettings<any>>(() => {
             const settings = { ...combinedMutationSettings, ...executionSettings };
             settings.parameters = { ...combinedMutationSettings.parameters, ...(executionSettings.parameters ?? {}) };
             if (executionSettings.refetchQueries) {
@@ -999,7 +1003,11 @@ export namespace ApiHooks {
               for (const query of queries) {
                 let finalCacheKeyValue: string | number;
                 try {
-                  finalCacheKeyValue = ApiHooksCaching.cacheKeyValueFromRefetchQuery(settingsFromHook.parameters, query);
+                  finalCacheKeyValue = ApiHooksCaching.cacheKeyValueFromRefetchQuery(
+                    settingsFromHook.parameters,
+                    query,
+                    settingsFromHook.refetchQueryContext
+                  );
                 } catch (error) {
                   throw new Error(`API Hooks Mutation Error, Endpoint: ${endpointHash} - ${error?.message ?? 'Refetch query failed'}`);
                 }
@@ -1052,7 +1060,14 @@ export namespace ApiHooks {
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
                   const resolvedRefetchQueries = finalSettings.refetchQueries.map((query) => {
-                    return { ...query, cacheKeyValue: ApiHooksCaching.cacheKeyValueFromRefetchQuery(finalSettings.parameters, query) };
+                    return {
+                      ...query,
+                      cacheKeyValue: ApiHooksCaching.cacheKeyValueFromRefetchQuery(
+                        finalSettings.parameters,
+                        query,
+                        finalSettings.refetchQueryContext
+                      ),
+                    };
                   });
                   refetchQueries(resolvedRefetchQueries);
                 }
