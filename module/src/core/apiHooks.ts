@@ -973,6 +973,7 @@ export namespace ApiHooks {
           // store response in state to return as index 1 from the hook
           const [isFetching, setIsFetching] = React.useState(false);
           const [fetchingMode, setFetchingMode] = React.useState<FetchingMode>('not-fetching');
+          const [errorState, setErrorState] = React.useState<any>();
           const [data, setData] = React.useState();
 
           // get the dispatcher and test keys from context
@@ -1046,6 +1047,7 @@ export namespace ApiHooks {
                 setData(value);
                 setFetchingMode('not-fetching');
                 setIsFetching(false);
+                setErrorState(undefined);
                 mutationLog(`Fetch successful`, { finalSettings, response: value });
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
@@ -1059,6 +1061,7 @@ export namespace ApiHooks {
                 setData(undefined);
                 setFetchingMode('not-fetching');
                 setIsFetching(false);
+                setErrorState(error);
                 mutationLog(`Fetch failed`, { error });
                 if (finalSettings.throwErrors) {
                   throw error;
@@ -1085,8 +1088,9 @@ export namespace ApiHooks {
               isFetching,
               processed,
               fetchingMode,
+              error: errorState,
             }),
-            [data, fetchingMode, isFetching, processed]
+            [data, fetchingMode, isFetching, processed, errorState]
           );
 
           return [fetch, liveResponse, refetchQueries];
