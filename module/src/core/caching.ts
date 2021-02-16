@@ -1,6 +1,7 @@
 import { ApiHooksStore } from './store';
 import { ApiHooks } from './apiHooks';
 import { EndpointIDs } from './endpointIDs';
+import { ApiHooksGlobal } from './global';
 
 /**
  * API Hooks - Caching
@@ -134,20 +135,28 @@ export namespace ApiHooksCaching {
   /**
    * Checks a dictionary of state slices for one endpoint (each entry represents a set of params) and
    * cuts it down to the max number of entries by deleting the oldest.
+   * @param endpointKey The key of the endpoint in question.
    * @param dictionary The slice of state to check (specific to an endpoint/params combination)
    * @param maxDepth The maximum number of entries allowed in a state slice (passed through from settings)
    */
-  export function cleanEndpointDictionary<K extends keyof ApiHooksStore.State>(dictionary: ApiHooksStore.State[K], maxDepth: number) {
+  export function cleanEndpointDictionary<K extends keyof ApiHooksStore.State>(
+    endpointKey: Extract<K, string>,
+    dictionary: ApiHooksStore.State[K],
+    maxDepth: number
+  ) {
     const newDictionary = { ...dictionary };
     const keys = Object.keys(dictionary || {});
-    if (keys.length > maxDepth) {
+    const overCacheSize = keys.length > maxDepth ? keys.length - maxDepth : 0;
+    for (let i = 0; i < overCacheSize; i += 1) {
       const oldestKey = keys.reduce((memo, key) => {
         if (newDictionary[key].timestamp < newDictionary[memo].timestamp) {
           return key;
         }
         return memo;
       }, keys[0]);
-      delete newDictionary[oldestKey];
+      if (!ApiHooksGlobal.isMounted(endpointKey, oldestKey)) {
+        delete newDictionary[oldestKey];
+      }
     }
     return newDictionary;
   }

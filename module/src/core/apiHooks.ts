@@ -889,6 +889,14 @@ export namespace ApiHooks {
             [invoke]
           );
 
+          /** FLOW MANAGEMENT EFFECTS */
+
+          // Manage endpoint mount status
+          React.useEffect(() => {
+            ApiHooksGlobal.setMounted(endpointHash, cacheKey);
+            return () => ApiHooksGlobal.setUnMounted(endpointHash, cacheKey);
+          }, [cacheKey]);
+
           /** INVOCATION TRIGGER EFFECTS */
 
           // called when the component mounts, checks whether to invoke based on settings

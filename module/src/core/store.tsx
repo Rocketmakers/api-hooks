@@ -349,7 +349,7 @@ export namespace ApiHooksStore {
       Object.keys(stateSlice).forEach((stateSliceKey) => {
         state[endpointKey][cacheKeyValue][stateSliceKey] = stateSlice[stateSliceKey];
       });
-      state[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(state[endpointKey], maxCachingDepth);
+      state[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(endpointKey, state[endpointKey], maxCachingDepth);
       /* eslint-enable no-param-reassign */
       return state;
     }
@@ -364,7 +364,7 @@ export namespace ApiHooksStore {
       },
     };
     // make sure the dictionary of state slices for this endpoint hasn't exceeded the maximum depth
-    newState[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(newState[endpointKey], maxCachingDepth);
+    newState[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(endpointKey, newState[endpointKey], maxCachingDepth);
     return newState;
   };
 
