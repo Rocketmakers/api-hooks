@@ -619,11 +619,6 @@ export namespace ApiHooks {
             return settings;
           }, [JSON.stringify(executionSettings)]);
 
-          // in order to support very low cache timeouts or cache that's always stale, we need to make sure
-          // we always return the data when it's literally just been loaded
-          // this should only default to 'true' if we're using default data
-          const justLoaded = React.useRef(!!settingsFromHook.useDefaultData);
-
           // cache key - retrieve any cache key value if one exists in the settings
           const cacheKeyValueFromHook = React.useMemo(() => {
             const { cacheKey, parameters } = settingsFromHook;
@@ -679,6 +674,19 @@ export namespace ApiHooks {
             return currentStoredStateSlice;
           }, [state[endpointHash], cacheKey, settingsFromHook]);
 
+          const isInLoadingState = React.useMemo(() => {
+            return (
+              storedStateSlice?.status === 'loading-auto' ||
+              storedStateSlice?.status === 'loading-manual' ||
+              storedStateSlice?.status === 'loading-refetch'
+            );
+          }, [storedStateSlice]);
+
+          // in order to support very low cache timeouts or cache that's always stale, we need to make sure
+          // we always return the data when it's literally just been loaded
+          // this should only default to 'true' if we're using default data
+          const justLoaded = React.useRef(!!settingsFromHook.useDefaultData || isInLoadingState);
+
           React.useLayoutEffect(() => {
             if (storedStateSlice && !state[endpointHash]?.[cacheKey]) {
               // To get here, we must have returned some default data that isn't stored in cache. We need to store it now.
@@ -726,7 +734,7 @@ export namespace ApiHooks {
 
             // If the data has just finished loading then we need to return it regardless of the cache settings.
             // this allows us to support cache that is always stale.
-            if (justLoaded.current) {
+            if (justLoaded.current && storedStateSlice?.data) {
               justLoaded.current = false;
               return withData;
             }
@@ -900,7 +908,7 @@ export namespace ApiHooks {
           /** INVOCATION TRIGGER EFFECTS */
 
           // called when the component mounts, checks whether to invoke based on settings
-          React.useEffect(() => {
+          React.useLayoutEffect(() => {
             if (settingsFromHook.autoInvoke) {
               queryLog('Auto invoke triggered');
               if (
