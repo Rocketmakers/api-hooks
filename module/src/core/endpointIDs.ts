@@ -63,8 +63,8 @@ export namespace EndpointIDs {
         // A string unique to the endpoint - combines the controller and endpoint names
         const endpointHash = `${controllerKey}.${endpointKey}`;
         const controllerDictionary = { ...incomingControllerDictionary };
-        controllerDictionary[endpointKey] = (config: Config<any>): Response<any> => {
-          return { endpointHash, ...config };
+        controllerDictionary[endpointKey] = (config: Config<any> | undefined): Response<any> => {
+          return { endpointHash, ...(config ?? {}) };
         };
         return controllerDictionary;
       }, {} as EndpointMethods<any>);

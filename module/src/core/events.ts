@@ -58,8 +58,8 @@ class EventManager<TCallback extends (...params: any) => any> {
    * @param args The arguments passed to each callback function
    * @returns The return value of the final callback executed
    */
-  public executeEventHooks(...args: Parameters<TCallback>): ReturnType<TCallback> {
-    return this.store.reduce((__, storedCallback) => storedCallback(...args), undefined);
+  public executeEventHooks(...args: Parameters<TCallback>): ReturnType<TCallback> | undefined {
+    return this.store.reduce<ReturnType<TCallback> | undefined>((__, storedCallback) => storedCallback(...args), undefined);
   }
 }
 

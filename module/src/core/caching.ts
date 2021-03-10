@@ -30,15 +30,11 @@ export namespace ApiHooksCaching {
     /**
      * Cached data will be re-fetched when older than this value
      */
-    staleIfOlderThan?: Directive;
+    staleIfOlderThan: Directive;
     /**
      * Cached data will be available in error state if older than this value
      */
-    staleOnErrorIfOlderThan?: Directive;
-    /**
-     * If true - the stale data will still be available whilst the new data is being fetched
-     */
-    fetchInBackground?: boolean;
+    staleOnErrorIfOlderThan: Directive;
     /**
      * An optional array of params to mark as "bookmarks", meaning that if a request is made with a falsy value in one of these params, the value from the previous request will be used if it exists. This is useful primarily for paging cursors.
      */
@@ -65,10 +61,6 @@ export namespace ApiHooksCaching {
      * 'never' - Cached data will always be used if the request is in an error state
      */
     staleOnErrorIfOlderThan: 'never',
-    /**
-     * true - Cached data will be available whilst the latest is being fetched - a spinner should be shown instead of the stale data where appropriate.
-     */
-    fetchInBackground: true,
   };
 
   /** UTILITIES */
@@ -161,7 +153,11 @@ export namespace ApiHooksCaching {
     return newDictionary;
   }
 
-  export function cacheKeyValueFromRefetchQuery<TParam>(params: TParam, refetchQuery: EndpointIDs.Response<TParam>, context?: any): string | number {
+  export function cacheKeyValueFromRefetchQuery<TParam>(
+    params: TParam,
+    refetchQuery: EndpointIDs.Response<TParam>,
+    context?: any
+  ): string | number | undefined {
     if (refetchQuery.cacheKeyValue) {
       return refetchQuery.cacheKeyValue;
     }

@@ -45,7 +45,7 @@ export namespace ApiHooksGlobal {
       return true;
     }
     const defaultValues = createEmptySlice();
-    return Object.keys(slice).reduce((value, key) => {
+    return Object.keys(slice).reduce<boolean>((value, key) => {
       if (value) {
         return defaultValues[key] === slice[key];
       }

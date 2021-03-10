@@ -139,9 +139,11 @@ export namespace ApiHooks {
   type HookEndpointConfig<TApiController> = {
     [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction
       ? {
-          query?: UseQueryConfigSettings<FirstParamOf<TApiController[TEndpointKey]>, PromiseResult<ReturnType<TApiController[TEndpointKey]>>>;
-          mutation?: UseMutationSettings<FirstParamOf<TApiController[TEndpointKey]>>;
-          request?: UseRequestSettings<FirstParamOf<TApiController[TEndpointKey]>>;
+          query?: Partial<
+            UseQueryConfigSettings<FirstParamOf<TApiController[TEndpointKey]>, PromiseResult<ReturnType<TApiController[TEndpointKey]>>>
+          >;
+          mutation?: Partial<UseMutationSettings<FirstParamOf<TApiController[TEndpointKey]>>>;
+          request?: Partial<UseRequestSettings<FirstParamOf<TApiController[TEndpointKey]>>>;
         }
       : never;
   };
@@ -150,15 +152,15 @@ export namespace ApiHooks {
     /**
      * The application level query settings, can be overridden at endpoint and hook execution level
      */
-    queryConfig?: UseQueryConfigSettings<TParam, any>;
+    queryConfig?: Partial<UseQueryConfigSettings<TParam, any>>;
     /**
      * The application level mutation settings, can be overridden at endpoint and hook execution level
      */
-    mutationConfig?: UseMutationSettings<TParam>;
+    mutationConfig?: Partial<UseMutationSettings<TParam>>;
     /**
      * The application level settings for the useRequest hook, can be overridden at endpoint and hook execution level
      */
-    requestConfig?: UseRequestSettings<TParam>;
+    requestConfig?: Partial<UseRequestSettings<TParam>>;
     /**
      * The application level general settings, can not be overridden, apply generally at application level
      */
@@ -172,7 +174,7 @@ export namespace ApiHooks {
     hookType: HookType,
     data: TRawResponse,
     fetchingMode: FetchingMode,
-    settings: UseQuerySettings<any, any> | UseMutationSettings<any>
+    settings?: UseQuerySettings<any, any> | UseMutationSettings<any>
   ) => TProcessingResponse;
 
   /**
@@ -257,7 +259,7 @@ export namespace ApiHooks {
 
   /** The type of the useQuery hook, receives execution settings and returns an array containing the live state and a fetch method */
   interface UseQuery<TEndpoint extends AnyFunction, TProcessingResponse> {
-    (settings?: UseQuerySettings<FirstParamOf<TEndpoint>, PromiseResult<ReturnType<TEndpoint>>>): UseQueryResponse<
+    (settings?: Partial<UseQuerySettings<FirstParamOf<TEndpoint>, PromiseResult<ReturnType<TEndpoint>>>>): UseQueryResponse<
       PromiseResult<ReturnType<TEndpoint>>,
       Partial<FirstParamOf<TEndpoint>>,
       TProcessingResponse
@@ -281,15 +283,15 @@ export namespace ApiHooks {
     /**
      * Should the request fire when the component mounts? Will only fire if cache is stale - defaults to true at system level
      */
-    autoInvoke?: boolean;
+    autoInvoke: boolean;
     /**
      * Should the request re-fire when the params change? - defaults to true at system level
      */
-    invokeOnParamChange?: boolean;
+    invokeOnParamChange: boolean;
     /**
      * The caching settings
      */
-    caching?: ApiHooksCaching.Settings<TParam>;
+    caching: Partial<ApiHooksCaching.Settings<TParam>>;
     /**
      * Should the hook use the canned default data on initial render?
      */
@@ -305,11 +307,11 @@ export namespace ApiHooks {
     /**
      * (optional) Will hold any invocation until the parameter designated as the cacheKey has a non "falsey" value.
      */
-    holdInvokeForCacheKeyParam?: boolean;
+    holdInvokeForCacheKeyParam: boolean;
     /**
      * Should manual invocations hit the server by default? Can be over-ridden during a manualInvoke with the `forceNetwork` setting
      */
-    forceNetworkOnManualInvoke?: boolean;
+    forceNetworkOnManualInvoke: boolean;
     /**
      * The parameters to send to the request
      */
@@ -325,7 +327,11 @@ export namespace ApiHooks {
     /**
      * By default, the system will block any request with the same endpoint/cacheKey whilst a request is already in progress. Setting this to true will override that behaviour and allow both requests to fire.
      */
-    allowSimultaneousRequests?: boolean;
+    allowSimultaneousRequests: boolean;
+    /**
+     * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
+     */
+    debugKey?: string;
   }
 
   /**
@@ -333,7 +339,7 @@ export namespace ApiHooks {
    * @param maxCachingDepth The maximum number of state slices to store (for different params) against this endpoint - defaults to 5 at system level
    */
   export interface UseQueryConfigSettings<TParam, TResponse> extends UseQuerySettings<TParam, TResponse> {
-    maxCachingDepth?: number;
+    maxCachingDepth: number;
   }
 
   /**
@@ -354,7 +360,7 @@ export namespace ApiHooks {
 
   /** The type of the useMutation hook, receives execution settings and returns a fetch method and some live response state */
   interface UseMutation<TEndpoint extends AnyFunction, TProcessingResponse> {
-    (settings?: UseMutationSettings<FirstParamOf<TEndpoint>>): UseMutationResponse<
+    (settings?: Partial<UseMutationSettings<FirstParamOf<TEndpoint>>>): UseMutationResponse<
       PromiseResult<ReturnType<TEndpoint>>,
       Partial<FirstParamOf<TEndpoint>>,
       TProcessingResponse
@@ -370,7 +376,7 @@ export namespace ApiHooks {
    * [2] - A "refetch"
    */
   type UseMutationResponse<TResponse, TParam, TProcessingResponse> = [
-    (param?: TParam, fetchSettings?: UseMutationSettings<TParam>) => Promise<TResponse>,
+    (param?: TParam, fetchSettings?: Partial<UseMutationSettings<TParam>>) => Promise<TResponse>,
     LiveResponse<TResponse, TProcessingResponse>,
     (refetchQueries: EndpointIDs.Response<TParam>[]) => void
   ];
@@ -383,11 +389,7 @@ export namespace ApiHooks {
      * @default true
      * Should the request throw errors? Or swallow them, allowing them to be handled via the live response object?
      */
-    throwErrors?: boolean;
-    /**
-     * If true, the live response data and error will not be cleared when a new fetch is invoked.
-     */
-    fetchInBackground?: boolean;
+    throwErrors: boolean;
     /**
      * Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
      */
@@ -404,13 +406,17 @@ export namespace ApiHooks {
      * An optional piece of data to send to endpoint level refetch queries in order to form a cache key.
      */
     refetchQueryContext?: any;
+    /**
+     * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
+     */
+    debugKey?: string;
   }
 
   /** USE REQUEST TYPES */
 
   /** The type of the useRequest hook, receives execution settings and returns a fetch method detached from state and caching */
   interface UseRequest<TEndpoint extends AnyFunction> {
-    (settings?: UseRequestSettings<Partial<FirstParamOf<TEndpoint>>>): UseRequestResponse<
+    (settings?: Partial<UseRequestSettings<Partial<FirstParamOf<TEndpoint>>>>): UseRequestResponse<
       PromiseResult<ReturnType<TEndpoint>>,
       Partial<FirstParamOf<TEndpoint>>
     >;
@@ -424,13 +430,17 @@ export namespace ApiHooks {
      * The parameters of the request can be optionally defined here.
      */
     parameters?: TParam;
+    /**
+     * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
+     */
+    debugKey?: string;
   }
 
   /**
    * The type denoting the response of the useRequest hook. receives the params + settings and returns a promise of the response data detached from all state and caching.
    * NOTE: The params and fetch settings here will override the params sent to the hook execution settings, but any hook execution params will be used if nothing is passed here.
    */
-  type UseRequestResponse<TResponse, TParam> = (param?: TParam, fetchSettings?: UseRequestSettings<TParam>) => Promise<TResponse>;
+  type UseRequestResponse<TResponse, TParam> = (param?: TParam, fetchSettings?: Partial<UseRequestSettings<TParam>>) => Promise<TResponse>;
 
   /** UTILITY FUNCTIONS */
 
@@ -486,7 +496,7 @@ export namespace ApiHooks {
   function createHooks<TController, TProcessingResponse = undefined>(
     rootKey: string,
     controller: TController,
-    rootQuerySettings: UseQuerySettings<any, any>,
+    rootQuerySettings: UseQueryConfigSettings<any, any>,
     rootMutationSettings: UseMutationSettings<any>,
     rootRequestSettings: UseRequestSettings<any>,
     hookConfig: HookConfigControllerLibrary<TController>,
@@ -501,7 +511,7 @@ export namespace ApiHooks {
       const endpointHash = `${rootKey}.${endpointKey}`;
 
       // fetch endpoint level query settings if available and apply on top of the passed in system and application level settings
-      const querySettings: UseQueryConfigSettings<any, any> = hookConfig[endpointKey]?.query ?? {};
+      const querySettings: Partial<UseQueryConfigSettings<any, any>> = hookConfig[endpointKey]?.query ?? {};
       const combinedQuerySettings = { ...rootQuerySettings, ...querySettings };
 
       // fetch endpoint level query caching settings if available and apply on top of the passed in system and application level settings
@@ -511,7 +521,7 @@ export namespace ApiHooks {
       combinedQuerySettings.parameters = { ...(rootQuerySettings.parameters ?? {}), ...(querySettings.parameters ?? {}) };
 
       // fetch endpoint level mutation settings if available and apply on top of the passed in system and application level settings
-      const mutationSettings: UseMutationSettings<any> = hookConfig[endpointKey]?.mutation ?? {};
+      const mutationSettings: Partial<UseMutationSettings<any>> = hookConfig[endpointKey]?.mutation ?? {};
       const combinedMutationSettings = { ...rootMutationSettings, ...mutationSettings };
 
       // fetch endpoint level mutation refetch queries if available and apply on top of the passed in system and application level settings
@@ -523,7 +533,7 @@ export namespace ApiHooks {
       combinedMutationSettings.parameters = { ...(rootMutationSettings.parameters ?? {}), ...(mutationSettings.parameters ?? {}) };
 
       // fetch endpoint level request parameters if available and apply on top of the passed in system and application level settings
-      const requestSettings: UseRequestSettings<any> = hookConfig[endpointKey]?.request ?? {};
+      const requestSettings: Partial<UseRequestSettings<any>> = hookConfig[endpointKey]?.request ?? {};
       const combinedRequestSettings = { ...rootRequestSettings, ...requestSettings };
 
       // create two promise factories - one returns the actual endpoint promise, the other returns the mock endpoint if it's been created
@@ -540,9 +550,9 @@ export namespace ApiHooks {
        * - includes some data about the controller and endpoint
        * - calls the root logging utility function
        */
-      const queryLog = (...messages: any[]) => {
+      const queryLog = (messages: any[], debugKey?: string) => {
         if (generalConfig?.debugMode) {
-          log(`API Hooks Query, Endpoint: ${endpointHash} -`, ...messages);
+          log(`API Hooks Query, Endpoint: ${endpointHash}${debugKey ? ` - ${debugKey}` : ''} -`, ...messages);
         }
       };
       /**
@@ -550,9 +560,9 @@ export namespace ApiHooks {
        * - includes some data about the controller and endpoint
        * - calls the root logging utility function
        */
-      const mutationLog = (...messages: any[]) => {
+      const mutationLog = (messages: any[], debugKey?: string) => {
         if (generalConfig?.debugMode) {
-          log(`API Hooks Mutation, Endpoint: ${endpointHash} -`, ...messages);
+          log(`API Hooks Mutation, Endpoint: ${endpointHash}${debugKey ? ` - ${debugKey}` : ''} -`, ...messages);
         }
       };
       /**
@@ -560,9 +570,9 @@ export namespace ApiHooks {
        * - includes some data about the controller and endpoint
        * - calls the root logging utility function
        */
-      const requestLog = (...messages: any[]) => {
+      const requestLog = (messages: any[], debugKey?: string) => {
         if (generalConfig?.debugMode) {
-          log(`API Hooks Request, Endpoint: ${endpointHash} -`, ...messages);
+          log(`API Hooks Request, Endpoint: ${endpointHash}${debugKey ? ` - ${debugKey}` : ''} -`, ...messages);
         }
       };
 
@@ -599,7 +609,7 @@ export namespace ApiHooks {
          * - Returns the live data and an optional fetch method to manually invoke
          * - Can only be used within a React Function Component
          */
-        useQuery: (executionSettings: UseQuerySettings<any, any> = {}): UseQueryResponse<any, any, any> => {
+        useQuery: (executionSettings: Partial<UseQuerySettings<any, any>> = {}): UseQueryResponse<any, any, any> => {
           /** MARK ENDPOINT AS USED */
           React.useEffect(() => {
             endpointUsed('query');
@@ -651,7 +661,7 @@ export namespace ApiHooks {
                 );
               }
               const defaultDataValue = defaultDataFactory(settingsFromHook.parameters);
-              queryLog(`Using default data`, { defaultData: defaultDataValue });
+              queryLog([`Using default data`, { defaultData: defaultDataValue }], settingsFromHook.debugKey);
               return {
                 paramHash: paramHashFromHook,
                 data: defaultDataValue,
@@ -662,7 +672,7 @@ export namespace ApiHooks {
             }
             // check for "initialData" passed to hook, and use that on first render
             if (!currentStoredStateSlice && settingsFromHook.initialData) {
-              queryLog(`Using initial data`, { initialData: settingsFromHook.initialData });
+              queryLog([`Using initial data`, { initialData: settingsFromHook.initialData }], settingsFromHook.debugKey);
               return {
                 paramHash: paramHashFromHook,
                 data: settingsFromHook.initialData,
@@ -674,30 +684,20 @@ export namespace ApiHooks {
             return currentStoredStateSlice;
           }, [state[endpointHash], cacheKey, settingsFromHook]);
 
-          const isInLoadingState = React.useMemo(() => {
-            return (
-              storedStateSlice?.status === 'loading-auto' ||
-              storedStateSlice?.status === 'loading-manual' ||
-              storedStateSlice?.status === 'loading-refetch'
-            );
-          }, [storedStateSlice]);
-
-          // in order to support very low cache timeouts or cache that's always stale, we need to make sure
-          // we always return the data when it's literally just been loaded
-          // this should only default to 'true' if we're using default data
-          const justLoaded = React.useRef(!!settingsFromHook.useDefaultData || isInLoadingState);
-
+          /**
+           * Effect to set default data to state
+           */
           React.useLayoutEffect(() => {
             if (storedStateSlice && !state[endpointHash]?.[cacheKey]) {
               // To get here, we must have returned some default data that isn't stored in cache. We need to store it now.
-              queryLog(`Storing initial data in cache`, { state: storedStateSlice });
-              dispatch(
+              queryLog([`Storing initial data in cache`, { state: storedStateSlice }], settingsFromHook.debugKey);
+              dispatch?.(
                 ApiHooksStore.Actions.loaded(
                   endpointHash,
                   storedStateSlice.paramHash,
                   cacheKey,
                   storedStateSlice.data,
-                  settingsFromHook.maxCachingDepth,
+                  settingsFromHook?.maxCachingDepth,
                   true
                 )
               );
@@ -706,47 +706,57 @@ export namespace ApiHooks {
 
           /** CACHE READER */
 
-          // value - create the data value to return from the state slice, this respects the caching settings to decide whether to return the actual data, but always returns any error or fetching status.
+          /**
+           * Reads the caching settings and data to ascertain whether the data is valid in it's current state.
+           */
+          const isCacheValid = React.useMemo<boolean>(() => {
+            let valid = false;
+            let validOnError = false;
+            if (storedStateSlice?.data) {
+              // it's safe to cast this out of partial here, as we know the system defaults have been loaded
+              const cachingSettings = settingsFromHook.caching as ApiHooksCaching.Settings<any>;
+              valid = !ApiHooksCaching.isStale(storedStateSlice, cachingSettings.staleIfOlderThan);
+              validOnError = !ApiHooksCaching.isStale(storedStateSlice, cachingSettings.staleOnErrorIfOlderThan);
+            }
+            queryLog(
+              [
+                `Cache validity loaded/updated`,
+                {
+                  settings: settingsFromHook,
+                  valid,
+                  validOnError,
+                },
+              ],
+              settingsFromHook.debugKey
+            );
+            if (storedStateSlice?.error) {
+              return validOnError;
+            }
+            return valid;
+          }, [storedStateSlice, settingsFromHook]);
+
+          // value - create the data value to return from the state slice
           const valueToReturn = React.useMemo<Omit<UseQueryResponse<any, any, any>[0], 'processed'>>(() => {
-            // create two data responses - one without data, and one with
-            const withoutData: Omit<UseQueryResponse<any, any, any>[0], 'processed'> = {
+            queryLog(
+              [
+                `Current state loaded/updated`,
+                {
+                  settings: settingsFromHook,
+                  cacheData: storedStateSlice ?? 'none',
+                  cacheKey,
+                },
+              ],
+              settingsFromHook.debugKey
+            );
+            return {
               error: storedStateSlice?.error,
               isFetching:
                 storedStateSlice?.status === 'loading-auto' ||
                 storedStateSlice?.status === 'loading-manual' ||
                 storedStateSlice?.status === 'loading-refetch',
               fetchingMode: ApiHooksStore.fetchingModeFromStateSliceStatus(storedStateSlice?.status),
+              data: storedStateSlice?.data,
             };
-            const withData = { ...withoutData, data: storedStateSlice?.data };
-
-            // check whether the data is valid (not stale) depending on settings
-            const valid = !!storedStateSlice?.data && !ApiHooksCaching.isStale(storedStateSlice, settingsFromHook.caching.staleIfOlderThan);
-            const validOnError =
-              !!storedStateSlice?.data && !ApiHooksCaching.isStale(storedStateSlice, settingsFromHook.caching.staleOnErrorIfOlderThan);
-            const validIfFetching = !!storedStateSlice?.data && settingsFromHook.caching.fetchInBackground;
-
-            queryLog(`Current state loaded/updated`, {
-              settings: settingsFromHook,
-              cacheData: storedStateSlice ?? 'none',
-              cacheValidity: { valid, validOnError, validIfFetching },
-              cacheKey,
-            });
-
-            // If the data has just finished loading then we need to return it regardless of the cache settings.
-            // this allows us to support cache that is always stale.
-            if (justLoaded.current && storedStateSlice?.data) {
-              justLoaded.current = false;
-              return withData;
-            }
-
-            // return the data or not, depending on validity
-            if (withoutData.isFetching) {
-              return validIfFetching ? withData : withoutData;
-            }
-            if (withoutData.error) {
-              return validOnError ? withData : withoutData;
-            }
-            return valid ? withData : withoutData;
           }, [storedStateSlice, settingsFromHook]);
 
           /** FETCHERS AND INVOKERS */
@@ -760,20 +770,26 @@ export namespace ApiHooks {
 
               // check the global live fetching log to avoid simultaneous requests being fired before react has processed the state changes.
               if (ApiHooksGlobal.isFetching(endpointHash, finalCacheKey) && !fetchSettings.allowSimultaneousRequests) {
-                queryLog('Fetching aborted, request already in progress', {
-                  settings: fetchSettings,
-                  paramHash: finalParamHash,
-                  cacheKey: finalCacheKey,
-                });
+                queryLog(
+                  [
+                    'Fetching aborted, request already in progress',
+                    {
+                      settings: fetchSettings,
+                      paramHash: finalParamHash,
+                      cacheKey: finalCacheKey,
+                    },
+                  ],
+                  fetchSettings.debugKey
+                );
                 return;
               }
               // set the endpoint to "fetching" in the live fetching log, to prevent duplicate requests from being fired on component load.
               ApiHooksGlobal.setFetching(endpointHash, finalCacheKey, true);
 
-              queryLog('Fetching', { settings: fetchSettings, paramHash: finalParamHash, cacheKey: finalCacheKey });
+              queryLog(['Fetching', { settings: fetchSettings, paramHash: finalParamHash, cacheKey: finalCacheKey }], fetchSettings.debugKey);
 
               // dispatch the loading action to change the fetching state
-              dispatch(ApiHooksStore.Actions.loading(endpointHash, finalParamHash, finalCacheKey, mode, fetchSettings.maxCachingDepth));
+              dispatch?.(ApiHooksStore.Actions.loading(endpointHash, finalParamHash, finalCacheKey, mode, fetchSettings.maxCachingDepth));
 
               // set up a try/catch - we're about to make the actual request
               let value: any;
@@ -783,7 +799,7 @@ export namespace ApiHooks {
                   if (!mockPromiseFactory) {
                     throw new Error(`API Hooks error - no mock endpoint has been defined for the following query: ${endpointHash}`);
                   }
-                  value = await mockPromiseFactory(fetchSettings.parameters, testKeys[endpointHash]?.testKey);
+                  value = await mockPromiseFactory(fetchSettings.parameters, testKeys?.[endpointHash]?.testKey);
                 } else {
                   value = await promiseFactory(fetchSettings.parameters);
                 }
@@ -795,9 +811,8 @@ export namespace ApiHooks {
                 lastUsedSettings.current = { ...fetchSettings };
 
                 // send the data to the store by despatching the loaded action
-                queryLog('Fetch successful, with result:', value);
-                justLoaded.current = true;
-                dispatch(
+                queryLog(['Fetch successful, with result:', value], fetchSettings.debugKey);
+                dispatch?.(
                   ApiHooksStore.Actions.loaded(
                     endpointHash,
                     finalParamHash,
@@ -810,8 +825,8 @@ export namespace ApiHooks {
                 );
               } catch (error) {
                 // an error has been thrown by the server, catch it and set it in state, otherwise throw it to the consumer.
-                queryLog('Fetch failed, with error:', error);
-                dispatch(ApiHooksStore.Actions.error(endpointHash, finalParamHash, finalCacheKey, error, fetchSettings.maxCachingDepth));
+                queryLog(['Fetch failed, with error:', error], fetchSettings.debugKey);
+                dispatch?.(ApiHooksStore.Actions.error(endpointHash, finalParamHash, finalCacheKey, error, fetchSettings.maxCachingDepth));
               } finally {
                 // set the request as finished fetching in the live fetching log so that future requests won't be aborted.
                 ApiHooksGlobal.setFetching(endpointHash, finalCacheKey, false);
@@ -845,7 +860,7 @@ export namespace ApiHooks {
                     const parsedHash = JSON.parse(storedStateSlice.paramHash);
                     if (parsedHash?.[bookmark]) {
                       finalSettings.parameters = { ...(finalSettings.parameters || {}), [bookmark]: parsedHash[bookmark] };
-                      queryLog('Loaded stored bookmark param', { paramName: bookmark, storedValue: parsedHash[bookmark] });
+                      queryLog(['Loaded stored bookmark param', { paramName: bookmark, storedValue: parsedHash[bookmark] }], finalSettings.debugKey);
                     }
                   }
                 }
@@ -856,7 +871,7 @@ export namespace ApiHooks {
 
               // create a set of booleans containing information about the current state of the request/caching.
               const inErrorState = !!storedStateSlice?.error;
-              const cacheIsStaleOrAbsent = !valueToReturn?.data;
+              const cacheIsStaleOrAbsent = !isCacheValid;
               const alreadyFetching = !!valueToReturn?.isFetching;
               const paramsAreDifferent = !finalSettings.invokeOnParamChange
                 ? false
@@ -867,26 +882,32 @@ export namespace ApiHooks {
               const shouldLoad =
                 (cacheIsStaleOrAbsent && !alreadyFetching) || inErrorState || paramsAreDifferent || forceNetwork || refetchTriggerSet;
 
-              queryLog(shouldLoad ? 'Invoking fetcher' : 'Cache loaded', {
-                inErrorState,
-                cacheIsStaleOrAbsent,
-                alreadyFetching,
-                paramsAreDifferent,
-                forceNetwork,
-                refetchTriggerSet,
-              });
+              queryLog(
+                [
+                  shouldLoad ? 'Invoking fetcher' : 'Cache loaded',
+                  {
+                    inErrorState,
+                    cacheIsStaleOrAbsent,
+                    alreadyFetching,
+                    paramsAreDifferent,
+                    forceNetwork,
+                    refetchTriggerSet,
+                  },
+                ],
+                finalSettings.debugKey
+              );
 
               if (shouldLoad) {
                 fetch(finalSettings, newParamHash, mode);
               }
             },
-            [storedStateSlice, valueToReturn, settingsFromHook, fetch]
+            [storedStateSlice, valueToReturn, settingsFromHook, fetch, isCacheValid]
           );
 
           // the manual invoke method is really just a proxy for invoke, with a bit of logging and settings application. returned as index 1 of the hook response for manual fetching
           const manualInvoke = React.useCallback<UseQueryResponse<any, any, any>[1]>(
             (...args) => {
-              queryLog('Manual invoke triggered');
+              queryLog(['Manual invoke triggered'], settingsFromHook.debugKey);
               // apply default forceNetwork setting to manual invoke
               const newArgs = [...args];
               if (newArgs[1]?.forceNetwork === undefined) {
@@ -894,7 +915,7 @@ export namespace ApiHooks {
               }
               invoke(newArgs[0], newArgs[1], 'manual');
             },
-            [invoke]
+            [invoke, settingsFromHook]
           );
 
           /** FLOW MANAGEMENT EFFECTS */
@@ -910,23 +931,23 @@ export namespace ApiHooks {
           // called when the component mounts, checks whether to invoke based on settings
           React.useLayoutEffect(() => {
             if (settingsFromHook.autoInvoke) {
-              queryLog('Auto invoke triggered');
+              queryLog(['Auto invoke triggered'], settingsFromHook.debugKey);
               if (
                 settingsFromHook.holdInvokeForCacheKeyParam &&
                 settingsFromHook.cacheKey &&
                 ApiHooksCaching.cacheKeyIsDefault(settingsFromHook.parameters, settingsFromHook.cacheKey)
               ) {
-                queryLog('Invoke held - cache key property has falsy value', { settings: settingsFromHook });
+                queryLog(['Invoke held - cache key property has falsy value', { settings: settingsFromHook }], settingsFromHook.debugKey);
               } else {
                 invoke();
               }
             }
-          }, []);
+          }, [!!settingsFromHook.autoInvoke]);
 
           // called when the params passed into the hook CHANGE, but NOT on first run - sets the new params/cache key and fetches data if the settings allow.
           React.useEffect(() => {
             if (!isFirstRender.current) {
-              queryLog('Parameters changed', { oldParams: storedStateSlice?.paramHash, newParams: paramHashFromHook });
+              queryLog(['Parameters changed', { oldParams: storedStateSlice?.paramHash, newParams: paramHashFromHook }], settingsFromHook.debugKey);
               setCacheKey(ApiHooksCaching.parseCacheKey(settingsFromHook.parameters, settingsFromHook.cacheKey));
               if (settingsFromHook.invokeOnParamChange) {
                 if (
@@ -934,7 +955,7 @@ export namespace ApiHooks {
                   settingsFromHook.cacheKey &&
                   ApiHooksCaching.cacheKeyIsDefault(settingsFromHook.parameters, settingsFromHook.cacheKey)
                 ) {
-                  queryLog('Fetch held - cache key property has falsy value', { settings: settingsFromHook });
+                  queryLog(['Fetch held - cache key property has falsy value', { settings: settingsFromHook }], settingsFromHook.debugKey);
                 } else {
                   fetch(settingsFromHook, paramHashFromHook, 'auto');
                 }
@@ -948,7 +969,7 @@ export namespace ApiHooks {
           React.useEffect(() => {
             if (!isFirstRender.current) {
               if (storedStateSlice?.shouldRefetchData) {
-                queryLog('Cache reset - refetch triggered', { parameters: lastUsedSettings.current?.parameters });
+                queryLog(['Cache reset - refetch triggered', { parameters: lastUsedSettings.current?.parameters }], settingsFromHook.debugKey);
                 invoke(lastUsedSettings.current?.parameters, undefined, 'refetch');
               }
             }
@@ -966,7 +987,7 @@ export namespace ApiHooks {
           const processed = processingHook?.('query', valueToReturn.data, valueToReturn.fetchingMode, lastUsedSettings.current);
           React.useEffect(() => {
             if (processingHook) {
-              queryLog(`Processing hook executed`, { hookType: 'query', data: storedStateSlice?.data, processed });
+              queryLog([`Processing hook executed`, { hookType: 'query', data: storedStateSlice?.data, processed }], settingsFromHook.debugKey);
             }
           }, [storedStateSlice?.data]);
 
@@ -984,7 +1005,7 @@ export namespace ApiHooks {
          * - Returns the fetch method to manually invoke, and a live response object
          * - Can only be used within a React Function Component
          */
-        useMutation: (executionSettings: UseMutationSettings<any> = {}): UseMutationResponse<any, any, any> => {
+        useMutation: (executionSettings: Partial<UseMutationSettings<any>> = {}): UseMutationResponse<any, any, any> => {
           /** MARK ENDPOINT AS USED */
           React.useEffect(() => {
             endpointUsed('mutation');
@@ -1017,7 +1038,7 @@ export namespace ApiHooks {
           const refetchQueries = React.useCallback<UseMutationResponse<any, any, any>[2]>(
             (queries) => {
               for (const query of queries) {
-                let finalCacheKeyValue: string | number;
+                let finalCacheKeyValue: string | number | undefined;
                 try {
                   finalCacheKeyValue = ApiHooksCaching.cacheKeyValueFromRefetchQuery(
                     settingsFromHook.parameters,
@@ -1027,8 +1048,8 @@ export namespace ApiHooks {
                 } catch (error) {
                   throw new Error(`API Hooks Mutation Error, Endpoint: ${endpointHash} - ${error?.message ?? 'Refetch query failed'}`);
                 }
-                mutationLog(`Refetch query processed`, { query, finalCacheKeyValue });
-                dispatch(ApiHooksStore.Actions.refetch(query.endpointHash, finalCacheKeyValue?.toString()));
+                mutationLog([`Refetch query processed`, { query, finalCacheKeyValue }], settingsFromHook.debugKey);
+                dispatch?.(ApiHooksStore.Actions.refetch(query.endpointHash, finalCacheKeyValue?.toString()));
               }
             },
             [dispatch, settingsFromHook]
@@ -1045,10 +1066,7 @@ export namespace ApiHooks {
               };
 
               // set live response to loading
-              mutationLog(`Fetch started`, { finalSettings });
-              if (!finalSettings.fetchInBackground) {
-                setData(undefined);
-              }
+              mutationLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);
               setFetchingMode('manual');
               setIsFetching(true);
 
@@ -1059,7 +1077,7 @@ export namespace ApiHooks {
                   if (!mockPromiseFactory) {
                     throw new Error(`API Hooks error - no mock endpoint has been defined for the following mutation: ${endpointHash}`);
                   }
-                  value = await mockPromiseFactory(finalSettings.parameters, testKeys[endpointKey]?.testKey);
+                  value = await mockPromiseFactory(finalSettings.parameters, testKeys?.[endpointKey]?.testKey);
                 } else {
                   value = await promiseFactory(finalSettings.parameters);
                 }
@@ -1072,7 +1090,7 @@ export namespace ApiHooks {
                 setFetchingMode('not-fetching');
                 setIsFetching(false);
                 setErrorState(undefined);
-                mutationLog(`Fetch successful`, { finalSettings, response: value });
+                mutationLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
                   const resolvedRefetchQueries = finalSettings.refetchQueries.map((query) => {
@@ -1093,7 +1111,7 @@ export namespace ApiHooks {
                 setFetchingMode('not-fetching');
                 setIsFetching(false);
                 setErrorState(error);
-                mutationLog(`Fetch failed`, { error });
+                mutationLog([`Fetch failed`, { error }], finalSettings.debugKey);
                 if (finalSettings.throwErrors) {
                   throw error;
                 }
@@ -1108,7 +1126,7 @@ export namespace ApiHooks {
           const processed = processingHook?.('mutation', data, fetchingMode, lastUsedSettings.current);
           React.useEffect(() => {
             if (processingHook) {
-              mutationLog(`Processing hook executed`, { hookType: 'mutation', data, processed });
+              mutationLog([`Processing hook executed`, { hookType: 'mutation', data, processed }], settingsFromHook.debugKey);
             }
           }, [data]);
 
@@ -1133,7 +1151,7 @@ export namespace ApiHooks {
          * - Returns the detached fetch method to manually invoke
          * - Can only be used within a React Function Component
          */
-        useRequest: (executionSettings: UseRequestSettings<any> = {}): UseRequestResponse<any, any> => {
+        useRequest: (executionSettings: Partial<UseRequestSettings<any>> = {}): UseRequestResponse<any, any> => {
           // settings - apply the hook execution settings (if any) to the passed in system, application and endpoint level.
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
           const settingsFromHook = React.useMemo<UseRequestSettings<any>>(() => {
@@ -1155,7 +1173,7 @@ export namespace ApiHooks {
                 ...(param ? { parameters: { ...(settingsFromHook.parameters ?? {}), ...param } } : {}),
               };
 
-              requestLog(`Fetch started`, { finalSettings });
+              requestLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);
 
               // fetch the data value from either the real or mock endpoint, depending on the settings
               let value: any;
@@ -1168,10 +1186,10 @@ export namespace ApiHooks {
                 } else {
                   value = await promiseFactory(finalSettings.parameters);
                 }
-                requestLog(`Fetch successful`, { finalSettings, response: value });
+                requestLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
               } catch (error) {
                 // set live response to failed
-                requestLog(`Fetch failed`, { finalSettings, error });
+                requestLog([`Fetch failed`, { finalSettings, error }], finalSettings.debugKey);
                 throw error;
               }
               // return the data, errors will be thrown for requests and should be handled by the consuming components.
@@ -1197,7 +1215,7 @@ export namespace ApiHooks {
     // apply application level query settings onto system level if any
     const rootQuerySettings: UseQueryConfigSettings<any, any> = { ...ApiHooksSystemSettings.systemDefaultQuery, ...(config.queryConfig ?? {}) };
     // apply application level query caching settings onto system level if any
-    rootQuerySettings.caching = { ...ApiHooksCaching.systemDefaults, ...(config.queryConfig?.caching ?? {}) };
+    rootQuerySettings.caching = { ...rootQuerySettings.caching, ...(config.queryConfig?.caching ?? {}) };
     // apply application level mutation settings onto system level if any
     const rootMutationSettings: UseMutationSettings<any> = { ...ApiHooksSystemSettings.systemDefaultMutation, ...(config.mutationConfig ?? {}) };
     // apply application level request settings onto system level if any

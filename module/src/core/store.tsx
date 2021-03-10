@@ -47,7 +47,7 @@ export namespace ApiHooksStore {
     /**
      *  The UNIX timestamp of the last request
      */
-    timestamp?: number;
+    timestamp: number;
     /**
      * A bool that triggers a refetch, this is set by the refetch queries logic.
      */
@@ -98,7 +98,7 @@ export namespace ApiHooksStore {
     /**
      * Root type for a state update action sent from an API hook
      */
-    export interface Action extends StateSlice<any> {
+    export interface Action extends Partial<StateSlice<any>> {
       /**
        *  A key specific to the endpoint (in format `controller.endpoint`)
        */
@@ -289,9 +289,9 @@ export namespace ApiHooksStore {
    * - Contains the state object and dispatch method
    * - All Api hooks listen for changes from this
    */
-  export const Context = React.createContext<[State, React.Dispatch<React.ReducerAction<React.Reducer<State, Actions.GenericAction>>>, TestKeyState]>(
-    [{}, undefined, undefined]
-  );
+  export const Context = React.createContext<
+    [State, React.Dispatch<React.ReducerAction<React.Reducer<State, Actions.GenericAction>>> | undefined, TestKeyState | undefined]
+  >([{}, undefined, undefined]);
 
   /**
    * Api Hooks - React reducer
@@ -313,7 +313,7 @@ export namespace ApiHooksStore {
                 [cacheKeyValue]: undefined,
               }
             : undefined,
-        };
+        } as State;
       }
       return {};
     }
@@ -430,7 +430,7 @@ export namespace ApiHooksStore {
      */
     const resetState = React.useCallback(
       (endpointId?: EndpointIDs.Response<never>) => {
-        dispatch(Actions.reset(endpointId?.endpointHash, endpointId?.cacheKeyValue?.toString()));
+        dispatch?.(Actions.reset(endpointId?.endpointHash, endpointId?.cacheKeyValue?.toString()));
       },
       [dispatch]
     );
