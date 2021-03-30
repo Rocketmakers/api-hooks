@@ -15,39 +15,45 @@ async function processTestArgs<TArgs = {}>(args: AddTestArgs<TArgs>) {
   }
 }
 
-class ExampleQueries {
+
+
+class Users {
+  // gets a list of all the users in the system
   getUserList = async (args: AddTestArgs) => {
     await processTestArgs(args)
     return MemoryServer.getUsers()
   }
+  // gets a single user by ID.
   getUser = async (args: AddTestArgs<{ id: string }>) => {
     await processTestArgs(args)
     return MemoryServer.getUser(args.id)
   }
-}
-
-class ExampleMutations {
+  // creates a new user
   addUser = async (args: AddTestArgs<{ data: Omit<MemoryServer.IUser, "id"> }>) => {
     await processTestArgs(args)
     return MemoryServer.addUser(args.data)
   }
+  // updates an existing user's data by ID.
   updateUser = async (args: AddTestArgs<{ id: string; data: Partial<Omit<MemoryServer.IUser, "id">> }>) => {
     await processTestArgs(args)
     return MemoryServer.updateUser(args.id, args.data)
   }
-}
-
-class ExampleRequests {
+  // removes a user from the system by ID.
+  deleteUser = async (args: AddTestArgs<{ id: string }>) => {
+    await processTestArgs(args)
+    return MemoryServer.deleteUser(args.id)
+  }
+  // receives a query string, and returns a list of matching users.
   searchUser = async (args: AddTestArgs<{ search: string }>) => {
     await processTestArgs(args)
     return MemoryServer.searchUsers(args.search)
   }
 }
 
+
+
 class ApiClient {
-  exampleQueries = new ExampleQueries()
-  exampleMutations = new ExampleMutations()
-  exampleRequests = new ExampleRequests()
+  user = new Users()
 }
 
 export const apiClient = new ApiClient()

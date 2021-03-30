@@ -600,6 +600,19 @@ export namespace ApiHooks {
         }
       };
 
+      /**
+       * Reducer used by useMutation to store live response state
+       * @param state The current live response state
+       * @param action A partial state to override the current
+       * @returns The updated state
+       */
+      const mutationFetchResponseReducer: React.Reducer<
+        Omit<UseMutationResponse<any, any, any>[1], 'processed'>,
+        Partial<Omit<UseMutationResponse<any, any, any>[1], 'processed'>>
+      > = (state, action) => {
+        return { ...state, ...action };
+      };
+
       const controllerDictionary = { ...incomingControllerDictionary };
       controllerDictionary[endpointKey] = {
         /**
@@ -1012,10 +1025,12 @@ export namespace ApiHooks {
           }, []);
 
           // store response in state to return as index 1 from the hook
-          const [isFetching, setIsFetching] = React.useState(false);
-          const [fetchingMode, setFetchingMode] = React.useState<FetchingMode>('not-fetching');
-          const [errorState, setErrorState] = React.useState<any>();
-          const [data, setData] = React.useState();
+          const [fetchStateResponse, setFetchStateResponse] = React.useReducer(mutationFetchResponseReducer, {
+            fetchingMode: 'not-fetching',
+            isFetching: false,
+            data: undefined,
+            error: undefined,
+          });
 
           // get the dispatcher and test keys from context
           const [, dispatch, testKeys] = React.useContext(ApiHooksStore.Context);
@@ -1067,8 +1082,7 @@ export namespace ApiHooks {
 
               // set live response to loading
               mutationLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);
-              setFetchingMode('manual');
-              setIsFetching(true);
+              setFetchStateResponse({ fetchingMode: 'manual', isFetching: true });
 
               // fetch the data value from either the real or mock endpoint, depending on the settings
               let value: any;
@@ -1086,10 +1100,7 @@ export namespace ApiHooks {
                 lastUsedSettings.current = finalSettings;
 
                 // set live response to success
-                setData(value);
-                setFetchingMode('not-fetching');
-                setIsFetching(false);
-                setErrorState(undefined);
+                setFetchStateResponse({ data: value, fetchingMode: 'not-fetching', isFetching: false, error: undefined });
                 mutationLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
@@ -1107,10 +1118,7 @@ export namespace ApiHooks {
                 }
               } catch (error) {
                 // set live response to failed
-                setData(undefined);
-                setFetchingMode('not-fetching');
-                setIsFetching(false);
-                setErrorState(error);
+                setFetchStateResponse({ data: undefined, fetchingMode: 'not-fetching', isFetching: false, error });
                 mutationLog([`Fetch failed`, { error }], finalSettings.debugKey);
                 if (finalSettings.throwErrors) {
                   throw error;
@@ -1123,24 +1131,21 @@ export namespace ApiHooks {
           );
 
           // run the processing hook
-          const processed = processingHook?.('mutation', data, fetchingMode, lastUsedSettings.current);
+          const processed = processingHook?.('mutation', fetchStateResponse.data, fetchStateResponse.fetchingMode, lastUsedSettings.current);
           React.useEffect(() => {
             if (processingHook) {
-              mutationLog([`Processing hook executed`, { hookType: 'mutation', data, processed }], settingsFromHook.debugKey);
+              mutationLog(
+                [`Processing hook executed`, { hookType: 'mutation', data: fetchStateResponse.data, processed }],
+                settingsFromHook.debugKey
+              );
             }
-          }, [data]);
+          }, [fetchStateResponse.data]);
 
           // compile the live response
-          const liveResponse = React.useMemo<UseMutationResponse<any, any, any>[1]>(
-            () => ({
-              data,
-              isFetching,
-              processed,
-              fetchingMode,
-              error: errorState,
-            }),
-            [data, fetchingMode, isFetching, processed, errorState]
-          );
+          const liveResponse = React.useMemo<UseMutationResponse<any, any, any>[1]>(() => ({ ...fetchStateResponse, processed }), [
+            fetchStateResponse,
+            processed,
+          ]);
 
           return [fetch, liveResponse, refetchQueries];
         },

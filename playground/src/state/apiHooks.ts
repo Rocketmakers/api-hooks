@@ -2,6 +2,7 @@ import * as React from "react"
 import { ApiHooks, EndpointIDs } from "@rocketmakers/api-hooks"
 import { apiClient } from "../api/apiClient"
 import { Toast, useToast } from "@rocketmakers/armstrong"
+import { endpointMapFactory } from "./endpointMap"
 
 interface IFetchApiResponse<T> {
   data?: T
@@ -36,4 +37,7 @@ export const apiHooks = ApiHooks.create(apiClient, {
 
     return { validationErrors } // this will be returned from every useQuery and useMutation, strictly typed!
   },
+  hookConfigFactory: endpointMapFactory
 })
+
+export const endpointIdentifiers = EndpointIDs.create(apiClient);

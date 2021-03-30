@@ -1,6 +1,6 @@
 {
   "name": "api-hooks",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Rocketmakers front-end library for parsing a generated Typescript API client into a set of configurable React hooks for fetching and mutating data.",
   "main": "index.js",
   "directories": {
