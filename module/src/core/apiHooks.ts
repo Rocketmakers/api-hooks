@@ -170,10 +170,11 @@ export namespace ApiHooks {
   /**
    * Type for the optional processing hook that can be passed to creating settings
    */
-  export type ProcessingHook<TProcessingResponse> = <TRawResponse>(
+  export type ProcessingHook<TProcessingResponse> = <TRawResponse, TError>(
     hookType: HookType,
-    data: TRawResponse,
     fetchingMode: FetchingMode,
+    data?: TRawResponse,
+    error?: TError,
     settings?: UseQuerySettings<any, any> | UseMutationSettings<any>
   ) => TProcessingResponse;
 
@@ -198,8 +199,9 @@ export namespace ApiHooks {
      * - Useful for processes such as error handling.
      * - Is executed as a hook within the same context as useQuery/useMutation, so can call and use other hooks.
      * @param hookType - Either `query` or `mutation` depending on what type of API Hooks is calling the processing hook.
-     * @param data - The response data from the API request
      * @param fetchingMode - Either `not-fetching` | `auto` | `manual` | `refetch` depending on why the data was fetched
+     * @param data - The response data from the API request
+     * @param error - The error response from the API request
      * @param settings - The final combined settings at the time of the fetch, typings will be different depending on whether it's `useQuery` or `useMutation`
      * @returns whatever you like, the returned value will be available, strictly typed, under the `processing` property of the live response returned by `useQuery` and `useMutation`
      */
@@ -997,7 +999,7 @@ export namespace ApiHooks {
 
           /** PROCESSING HOOK */
 
-          const processed = processingHook?.('query', valueToReturn.data, valueToReturn.fetchingMode, lastUsedSettings.current);
+          const processed = processingHook?.('query', valueToReturn.fetchingMode, valueToReturn.data, valueToReturn.error, lastUsedSettings.current);
           React.useEffect(() => {
             if (processingHook) {
               queryLog([`Processing hook executed`, { hookType: 'query', data: storedStateSlice?.data, processed }], settingsFromHook.debugKey);
@@ -1131,7 +1133,13 @@ export namespace ApiHooks {
           );
 
           // run the processing hook
-          const processed = processingHook?.('mutation', fetchStateResponse.data, fetchStateResponse.fetchingMode, lastUsedSettings.current);
+          const processed = processingHook?.(
+            'mutation',
+            fetchStateResponse.fetchingMode,
+            fetchStateResponse.data,
+            fetchStateResponse.error,
+            lastUsedSettings.current
+          );
           React.useEffect(() => {
             if (processingHook) {
               mutationLog(
