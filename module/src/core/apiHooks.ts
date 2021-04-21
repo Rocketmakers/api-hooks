@@ -170,7 +170,10 @@ export namespace ApiHooks {
   /**
    * Type for the optional processing hook that can be passed to creating settings
    */
-  export type ProcessingHook<TProcessingResponse> = <TRawResponse, TError>(
+  export type ProcessingHook<TProcessingResponse, TResponseStructure = any, TErrorStructure = any> = <
+    TRawResponse extends TResponseStructure,
+    TError extends TErrorStructure
+  >(
     hookType: HookType,
     fetchingMode: FetchingMode,
     data?: TRawResponse,
