@@ -6,7 +6,7 @@ interface ProcessingResponse {
   validationErrors: { key: string; message: string }[]
 }
 
-export const processingHook: ApiHooks.ProcessingHook<ProcessingResponse> = (hookType, fetchingMode, data, error, settings) => {
+export const processingHook: ApiHooks.ProcessingHook<ProcessingResponse> = ({ hookType, fetchingMode, data, error, settings }) => {
   // armstrong toast
   const { dispatch } = useToast()
 
