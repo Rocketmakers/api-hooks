@@ -462,6 +462,10 @@ export namespace ApiHooks {
      * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
      */
     debugKey?: string;
+    /**
+     * Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
+     */
+    useMockEndpoints?: boolean;
   }
 
   /**
@@ -1233,11 +1237,11 @@ export namespace ApiHooks {
               // fetch the data value from either the real or mock endpoint, depending on the settings
               let value: any;
               try {
-                if (testKeys) {
+                if (testKeys || finalSettings?.useMockEndpoints) {
                   if (!mockPromiseFactory) {
                     throw new Error(`API Hooks error - no mock endpoint has been defined for the following request: ${endpointHash}`);
                   }
-                  value = await mockPromiseFactory(finalSettings.parameters, testKeys[endpointKey]?.testKey);
+                  value = await mockPromiseFactory(finalSettings.parameters, testKeys?.[endpointKey]?.testKey);
                 } else {
                   value = await promiseFactory(finalSettings.parameters);
                 }
