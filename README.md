@@ -62,7 +62,7 @@ import { ApiHooks, EndpointIDs } from "@rocketmakers/api-hooks"
 import { apiClient } from "*API CLient location*"
 
 export const apiHooks = ApiHooks.create(apiClient)
-export const endpointIds = EndpointIds.create(apiClient)
+export const endpointIds = EndpointIDs.create(apiClient)
 
 ```
 
