@@ -23,6 +23,8 @@ export namespace ApiHooksCaching {
    */
   export type Directive = number | 'always' | 'never';
 
+  export type BookmarkParams<TParam> = (keyof TParam)[] | ((params: TParam) => Partial<TParam> | undefined);
+
   /**
    * Root type for the cache settings
    */
@@ -38,7 +40,7 @@ export namespace ApiHooksCaching {
     /**
      * An optional array of params to mark as "bookmarks", meaning that if a request is made with a falsy value in one of these params, the value from the previous request will be used if it exists. This is useful primarily for paging cursors.
      */
-    bookmarkParameters?: (keyof TParam)[];
+    bookmarkParameters?: BookmarkParams<TParam>;
   }
 
   /** CONSTANTS */
@@ -153,6 +155,13 @@ export namespace ApiHooksCaching {
     return newDictionary;
   }
 
+  /**
+   * Retrieves the value of the cache key property from a refetch query
+   * @param params The params to look in
+   * @param refetchQuery The refetch query in question
+   * @param context The optional context object for the refetch query
+   * @returns The value of the cache key if it exists
+   */
   export function cacheKeyValueFromRefetchQuery<TParam>(
     params: TParam,
     refetchQuery: EndpointIDs.Response<TParam>,
@@ -169,6 +178,22 @@ export namespace ApiHooksCaching {
       return value;
     }
     return undefined;
+  }
+
+  /**
+   * Converts the bookmark params property into a partial param object containing the passed values.
+   * @param params The params to retrieve values from.
+   * @param bookmarks The bookmark params object
+   * @returns A partial param object or undefined if no bookmark values.
+   */
+  export function parseBookmarksIntoParamPartial<TParam>(params?: TParam, bookmarks?: BookmarkParams<TParam>): Partial<TParam> | undefined {
+    if (!params || !bookmarks) {
+      return undefined;
+    }
+    if (typeof bookmarks === 'function') {
+      return bookmarks(params);
+    }
+    return bookmarks.reduce((compiledParams, bookmark) => ({ ...compiledParams, [bookmark]: params[bookmark] }), {});
   }
 
   /**

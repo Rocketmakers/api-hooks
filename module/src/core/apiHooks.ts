@@ -900,13 +900,16 @@ export namespace ApiHooks {
 
               // check for bookmark parameters, and read the stored value if appropriate
               if (finalSettings.caching?.bookmarkParameters && valueToReturn?.data && storedStateSlice?.paramHash) {
-                for (const bookmark of finalSettings.caching?.bookmarkParameters) {
-                  if (!finalSettings.parameters?.[bookmark]) {
-                    const parsedHash = JSON.parse(storedStateSlice.paramHash);
-                    if (parsedHash?.[bookmark]) {
-                      finalSettings.parameters = { ...(finalSettings.parameters || {}), [bookmark]: parsedHash[bookmark] };
-                      queryLog(['Loaded stored bookmark param', { paramName: bookmark, storedValue: parsedHash[bookmark] }], finalSettings.debugKey);
-                    }
+                const bookmarkPartial = ApiHooksCaching.parseBookmarksIntoParamPartial(
+                  finalSettings.parameters,
+                  finalSettings.caching.bookmarkParameters
+                );
+                if (bookmarkPartial) {
+                  const parsedHash = JSON.parse(storedStateSlice.paramHash);
+                  const previousValues = ApiHooksCaching.parseBookmarksIntoParamPartial(parsedHash, finalSettings.caching.bookmarkParameters);
+                  if (previousValues) {
+                    finalSettings.parameters = { ...(finalSettings.parameters || {}), ...previousValues };
+                    queryLog(['Loaded stored bookmark params', previousValues], finalSettings.debugKey);
                   }
                 }
               }
