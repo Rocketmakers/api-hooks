@@ -1,11 +1,19 @@
 import * as React from "react"
 import { apiHooks } from "../../state/apiHooks"
 
-import "./home.scss"
 
 export const Home: React.FC = () => {
-
-  const [{ isFetching, data, processed: { validationErrors } }] = apiHooks.user.getUserList.useQuery()
+  const [
+    {
+      isFetching,
+      data,
+      processed: { validationErrors },
+    },
+  ] = apiHooks.user.getUserList.useQuery({
+    parameters: {
+      requestDelay: 5000
+    }
+  })
 
   return (
     <div className="home">

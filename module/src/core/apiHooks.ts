@@ -4,6 +4,7 @@ import { ApiHooksStore } from './store';
 import { ApiHooksSystemSettings } from './systemSettings';
 import { ApiHooksGlobal } from './global';
 import { EndpointIDs } from './endpointIDs';
+import { Objects } from '../utils/objects';
 
 /**
  * API Hooks
@@ -544,29 +545,15 @@ export namespace ApiHooks {
 
       // fetch endpoint level query settings if available and apply on top of the passed in system and application level settings
       const querySettings: Partial<UseQueryConfigSettings<any, any>> = hookConfig[endpointKey]?.query ?? {};
-      const combinedQuerySettings = { ...rootQuerySettings, ...querySettings };
-
-      // fetch endpoint level query caching settings if available and apply on top of the passed in system and application level settings
-      combinedQuerySettings.caching = { ...rootQuerySettings.caching, ...(querySettings.caching ?? {}) };
-
-      // fetch endpoint level query parameters if available and apply on top of the passed in system and application level settings
-      combinedQuerySettings.parameters = { ...(rootQuerySettings.parameters ?? {}), ...(querySettings.parameters ?? {}) };
+      const combinedQuerySettings = Objects.mergeDeep(rootQuerySettings, querySettings);
 
       // fetch endpoint level mutation settings if available and apply on top of the passed in system and application level settings
       const mutationSettings: Partial<UseMutationSettings<any>> = hookConfig[endpointKey]?.mutation ?? {};
-      const combinedMutationSettings = { ...rootMutationSettings, ...mutationSettings };
-
-      // fetch endpoint level mutation refetch queries if available and apply on top of the passed in system and application level settings
-      if (mutationSettings.refetchQueries) {
-        combinedMutationSettings.refetchQueries = [...(rootMutationSettings.refetchQueries || []), ...mutationSettings.refetchQueries];
-      }
-
-      // fetch endpoint level mutation parameters if available and apply on top of the passed in system and application level settings
-      combinedMutationSettings.parameters = { ...(rootMutationSettings.parameters ?? {}), ...(mutationSettings.parameters ?? {}) };
+      const combinedMutationSettings = Objects.mergeDeep(rootMutationSettings, mutationSettings);
 
       // fetch endpoint level request parameters if available and apply on top of the passed in system and application level settings
       const requestSettings: Partial<UseRequestSettings<any>> = hookConfig[endpointKey]?.request ?? {};
-      const combinedRequestSettings = { ...rootRequestSettings, ...requestSettings };
+      const combinedRequestSettings = Objects.mergeDeep(rootRequestSettings, requestSettings);
 
       // create two promise factories - one returns the actual endpoint promise, the other returns the mock endpoint if it's been created
       const promiseFactory = (arg: any) => controller[endpointKey](arg);
@@ -668,10 +655,7 @@ export namespace ApiHooks {
           // settings - apply the hook execution settings (if any) to the passed in system, application and endpoint level.
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
           const settingsFromHook = React.useMemo<UseQueryConfigSettings<any, any>>(() => {
-            const settings = { ...combinedQuerySettings, ...executionSettings };
-            settings.caching = { ...combinedQuerySettings.caching, ...(executionSettings.caching ?? {}) };
-            settings.parameters = { ...combinedQuerySettings.parameters, ...(executionSettings.parameters ?? {}) };
-            return settings;
+            return Objects.mergeDeep(combinedQuerySettings, executionSettings) as UseQueryConfigSettings<any, any>;
           }, [JSON.stringify(executionSettings)]);
 
           // cache key - retrieve any cache key value if one exists in the settings
@@ -885,10 +869,7 @@ export namespace ApiHooks {
           const invoke = React.useCallback<(param?: any, fetchSettings?: UseQueryFetchSettings<any>, mode?: FetchingMode) => void>(
             (param, fetchSettings, mode = 'auto') => {
               // merge any params into existing settings passed from higher levels
-              const finalSettings = {
-                ...settingsFromHook,
-                ...(param ? { parameters: { ...(settingsFromHook.parameters ?? {}), ...param } } : {}),
-              };
+              const finalSettings = Objects.mergeDeep(settingsFromHook, { parameters: param || {} }) as typeof settingsFromHook;
 
               // if the manual invoke has been used with a payload modifier, add it on here.
               if (fetchSettings?.payloadModifier) {
@@ -908,7 +889,7 @@ export namespace ApiHooks {
                   const parsedHash = JSON.parse(storedStateSlice.paramHash);
                   const previousValues = ApiHooksCaching.parseBookmarksIntoParamPartial(parsedHash, finalSettings.caching.bookmarkParameters);
                   if (previousValues) {
-                    finalSettings.parameters = { ...(finalSettings.parameters || {}), ...previousValues };
+                    finalSettings.parameters = Objects.mergeDeep(finalSettings.parameters || {}, previousValues);
                     queryLog(['Loaded stored bookmark params', previousValues], finalSettings.debugKey);
                   }
                 }
@@ -1087,12 +1068,7 @@ export namespace ApiHooks {
           // settings - apply the hook execution settings (if any) to the passed in system, application and endpoint level.
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
           const settingsFromHook = React.useMemo<UseMutationSettings<any>>(() => {
-            const settings = { ...combinedMutationSettings, ...executionSettings };
-            settings.parameters = { ...combinedMutationSettings.parameters, ...(executionSettings.parameters ?? {}) };
-            if (executionSettings.refetchQueries) {
-              settings.refetchQueries = [...(combinedMutationSettings.refetchQueries ?? []), ...executionSettings.refetchQueries];
-            }
-            return settings;
+            return Objects.mergeDeep(combinedMutationSettings, executionSettings) as UseMutationSettings<any>;
           }, [JSON.stringify(executionSettings)]);
 
           // the method used to dispatch refetch actions - these trigger the "refetch query" behaviour.
@@ -1120,11 +1096,7 @@ export namespace ApiHooks {
           const fetch = React.useCallback<UseMutationResponse<any, any, any>[0]>(
             async (param, settings) => {
               // combine all the settings together in order to include system, application, endpoint, execution and fetch level, as well as the passed in params.
-              const finalSettings: UseMutationSettings<any> = {
-                ...settingsFromHook,
-                ...(settings || {}),
-                ...(param ? { parameters: { ...(settingsFromHook.parameters ?? {}), ...param } } : {}),
-              };
+              const finalSettings: UseMutationSettings<any> = Objects.mergeDeep(settingsFromHook, settings || {}, { parameters: param || {} });
 
               // set live response to loading
               mutationLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);

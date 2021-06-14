@@ -5,7 +5,7 @@
   "main": "./src/index.tsx",
   "scripts": {
     "start": "webpack serve",
-    "postinstall": "npm run link-react",
+    "postinstall": "npm run link-api-hooks && npm run link-react",
     "link-react": "npm link ../module/node_modules/react && npm link ../module/node_modules/react-dom",
     "link-api-hooks": "npm link @rocketmakers/api-hooks"
   },
@@ -16,6 +16,7 @@
     "@rocketmakers/armstrong": "^0.0.1-alpha.64",
     "history": "^5.0.0",
     "react-router-dom": "^5.2.0",
+    "tslib": "^2.3.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
