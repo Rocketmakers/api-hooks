@@ -405,7 +405,7 @@ export namespace ApiHooks {
    * [1] - A simple "live response" object - not stored in global state.
    * [2] - A "refetch"
    */
-  type UseMutationResponse<TResponse, TParam, TProcessingResponse> = [
+  export type UseMutationResponse<TResponse, TParam, TProcessingResponse> = [
     (param?: TParam, fetchSettings?: Partial<UseMutationSettings<TParam>>) => Promise<TResponse>,
     LiveResponse<TResponse, TProcessingResponse>,
     (refetchQueries: EndpointIDs.Response<TParam>[]) => void
