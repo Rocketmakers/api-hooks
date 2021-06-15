@@ -1,7 +1,6 @@
 import * as React from "react"
 import { apiHooks } from "../../state/apiHooks"
 
-
 export const Home: React.FC = () => {
   const [
     {
@@ -9,10 +8,12 @@ export const Home: React.FC = () => {
       data,
       processed: { validationErrors },
     },
+    ,
+    manual,
   ] = apiHooks.user.getUserList.useQuery({
     parameters: {
-      requestDelay: 5000
-    }
+      requestDelay: 5000,
+    },
   })
 
   return (

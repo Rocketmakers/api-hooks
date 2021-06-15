@@ -300,10 +300,12 @@ export namespace ApiHooks {
    * The type denoting the response of the useQuery hook
    * @returns[0] An object containing the live data, error, and fetching bool relating to the API request.
    * @returns[1] A manual fetch method for invoking the request - receives the params, optional settings and returns a promise with some data
+   * @returns[2] A manual state setter for the state slice in question (DO NOT USE UNLESS YOU HAVE TO)
    */
   export type UseQueryResponse<TCache, TParam, TProcessingResponse> = [
     LiveResponse<TCache, TProcessingResponse>,
-    (param?: TParam, fetchSettings?: UseQueryFetchSettings<TCache>) => void
+    (param?: TParam, fetchSettings?: UseQueryFetchSettings<TCache>) => void,
+    (newState: TCache, overrideSettings?: UseQueryConfigSettings<TParam, TCache>) => void
   ];
 
   /**
@@ -949,6 +951,17 @@ export namespace ApiHooks {
             [invoke, settingsFromHook]
           );
 
+          // the manual state setter
+          const manualSet = React.useCallback<UseQueryResponse<any, any, any>[2]>(
+            (newState, overrideSettings) => {
+              const finalSettings = { ...settingsFromHook, ...(overrideSettings ?? {}) };
+              const finalCacheKey = ApiHooksCaching.parseCacheKey(finalSettings.parameters, finalSettings.cacheKey);
+              const finalParamHash = ApiHooksCaching.hashParams(finalSettings.parameters);
+              dispatch?.(ApiHooksStore.Actions.loaded(endpointHash, finalParamHash, finalCacheKey, newState, finalSettings.maxCachingDepth));
+            },
+            [settingsFromHook]
+          );
+
           /** FLOW MANAGEMENT EFFECTS */
 
           // Manage endpoint mount status
@@ -1038,7 +1051,7 @@ export namespace ApiHooks {
           const valueToReturnWithProcessed = React.useMemo(() => ({ ...valueToReturn, processed }), [valueToReturn, processed]);
 
           // return the state value and the fetch method from the hook
-          return [valueToReturnWithProcessed, manualInvoke];
+          return [valueToReturnWithProcessed, manualInvoke, manualSet];
         },
         /**
          * useMutation
