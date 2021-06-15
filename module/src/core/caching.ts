@@ -139,9 +139,9 @@ export namespace ApiHooksCaching {
     maxDepth: number
   ) {
     const newDictionary = { ...dictionary };
-    const keys = Object.keys(dictionary || {});
+    const keys = Object.keys(newDictionary || {});
     const overCacheSize = keys.length > maxDepth ? keys.length - maxDepth : 0;
-    const keysToRemove: string[] = []
+    const keysToRemove: string[] = [];
     for (let i = 0; i < overCacheSize; i += 1) {
       const oldestKey = keys.reduce((memo, key) => {
         if (newDictionary[key].timestamp < newDictionary[memo].timestamp) {
@@ -150,12 +150,12 @@ export namespace ApiHooksCaching {
         return memo;
       }, keys[0]);
       if (!ApiHooksGlobal.isMounted(endpointKey, oldestKey)) {
-        keysToRemove.push(oldestKey)
+        keysToRemove.push(oldestKey);
       }
     }
-    keysToRemove.forEach(key => {
+    keysToRemove.forEach((key) => {
       delete newDictionary[key];
-    })
+    });
     return newDictionary;
   }
 
