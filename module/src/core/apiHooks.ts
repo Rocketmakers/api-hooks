@@ -278,6 +278,7 @@ export namespace ApiHooks {
     isFetching: boolean;
     fetchingMode: FetchingMode;
     processed: TProcessingResponse;
+    endpointID: string;
   };
 
   /** CACHE KEY TYPES */
@@ -785,6 +786,7 @@ export namespace ApiHooks {
                 storedStateSlice?.status === 'loading-refetch',
               fetchingMode: ApiHooksStore.fetchingModeFromStateSliceStatus(storedStateSlice?.status),
               data: storedStateSlice?.data,
+              endpointID: endpointHash,
             };
           }, [storedStateSlice, settingsFromHook]);
 
@@ -1057,6 +1059,7 @@ export namespace ApiHooks {
             isFetching: false,
             data: undefined,
             error: undefined,
+            endpointID: endpointHash,
           });
 
           // get the dispatcher and test keys from context
