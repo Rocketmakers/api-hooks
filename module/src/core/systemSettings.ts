@@ -53,7 +53,7 @@ export namespace ApiHooksSystemSettings {
   /**
    * The system default useMutation settings, can be overridden at application, endpoint and hook level.
    */
-  export const systemDefaultMutation: Omit<ApiHooks.UseMutationSettings<any>, 'parameters'> = {
+  export const systemDefaultMutation: Omit<ApiHooks.UseMutationSettings<any, any>, 'parameters'> = {
     /**
      * @default true
      * Errors from a mutation fetch will reject the promise rather than be swallowed by the hook
@@ -64,5 +64,5 @@ export namespace ApiHooksSystemSettings {
   /**
    * The system default useRequest settings, can be overridden at application, endpoint and hook level.
    */
-  export const systemDefaultRequest: Omit<ApiHooks.UseRequestSettings<any>, 'parameters'> = {};
+  export const systemDefaultRequest: Omit<ApiHooks.UseRequestSettings<any, any>, 'parameters'> = {};
 }

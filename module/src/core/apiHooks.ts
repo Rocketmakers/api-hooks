@@ -143,8 +143,10 @@ export namespace ApiHooks {
           query?: Partial<
             UseQueryConfigSettings<FirstParamOf<TApiController[TEndpointKey]>, PromiseResult<ReturnType<TApiController[TEndpointKey]>>>
           >;
-          mutation?: Partial<UseMutationSettings<FirstParamOf<TApiController[TEndpointKey]>>>;
-          request?: Partial<UseRequestSettings<FirstParamOf<TApiController[TEndpointKey]>>>;
+          mutation?: Partial<
+            UseMutationSettings<FirstParamOf<TApiController[TEndpointKey]>, PromiseResult<ReturnType<TApiController[TEndpointKey]>>>
+          >;
+          request?: Partial<UseRequestSettings<FirstParamOf<TApiController[TEndpointKey]>, PromiseResult<ReturnType<TApiController[TEndpointKey]>>>>;
         }
       : never;
   };
@@ -157,11 +159,11 @@ export namespace ApiHooks {
     /**
      * The application level mutation settings, can be overridden at endpoint and hook execution level
      */
-    mutationConfig?: Partial<UseMutationSettings<TParam>>;
+    mutationConfig?: Partial<UseMutationSettings<TParam, any>>;
     /**
      * The application level settings for the useRequest hook, can be overridden at endpoint and hook execution level
      */
-    requestConfig?: Partial<UseRequestSettings<TParam>>;
+    requestConfig?: Partial<UseRequestSettings<TParam, any>>;
     /**
      * The application level general settings, can not be overridden, apply generally at application level
      */
@@ -192,7 +194,7 @@ export namespace ApiHooks {
     /**
      * The final combined settings at the time of the fetch, typings will be different depending on whether it's `useQuery` or `useMutation`
      */
-    settings?: UseQuerySettings<any, any> | UseMutationSettings<any>;
+    settings?: UseQuerySettings<any, any> | UseMutationSettings<any, any>;
   }
 
   /**
@@ -364,6 +366,18 @@ export namespace ApiHooks {
      * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
      */
     debugKey?: string;
+    /**
+     * An optional callback function to run when a fetch has completed successfully
+     */
+    onFetchSuccess?: (response: TResponse) => any;
+    /**
+     * An optional callback function to run when a fetch has failed
+     */
+    onFetchError?: (error: any) => any;
+    /**
+     * An optional callback function to run when a fetch has completed, regardless of whether it resulted in an error
+     */
+    onFetchComplete?: (response?: TResponse, error?: any) => any;
   }
 
   /**
@@ -392,7 +406,7 @@ export namespace ApiHooks {
 
   /** The type of the useMutation hook, receives execution settings and returns a fetch method and some live response state */
   interface UseMutation<TEndpoint extends AnyFunction, TProcessingResponse> {
-    (settings?: Partial<UseMutationSettings<FirstParamOf<TEndpoint>>>): UseMutationResponse<
+    (settings?: Partial<UseMutationSettings<FirstParamOf<TEndpoint>, PromiseResult<ReturnType<TEndpoint>>>>): UseMutationResponse<
       PromiseResult<ReturnType<TEndpoint>>,
       Partial<FirstParamOf<TEndpoint>>,
       TProcessingResponse
@@ -408,7 +422,7 @@ export namespace ApiHooks {
    * [2] - A "refetch"
    */
   export type UseMutationResponse<TResponse, TParam, TProcessingResponse> = [
-    (param?: TParam, fetchSettings?: Partial<UseMutationSettings<TParam>>) => Promise<TResponse>,
+    (param?: TParam, fetchSettings?: Partial<UseMutationSettings<TParam, TResponse>>) => Promise<TResponse>,
     LiveResponse<TResponse, TProcessingResponse>,
     (refetchQueries: EndpointIDs.Response<TParam>[]) => void
   ];
@@ -416,12 +430,12 @@ export namespace ApiHooks {
   /**
    * The basic mutation settings used at system, application, endpoint and hook execution level.
    */
-  export interface UseMutationSettings<TParam> {
+  export interface UseMutationSettings<TParam, TResponse> {
     /**
      * @default true
      * Should the request throw errors? Or swallow them, allowing them to be handled via the live response object?
      */
-    throwErrors: boolean;
+    throwErrors?: boolean;
     /**
      * Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
      */
@@ -442,13 +456,25 @@ export namespace ApiHooks {
      * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
      */
     debugKey?: string;
+    /**
+     * An optional callback function to run when a fetch has completed successfully
+     */
+    onFetchSuccess?: (response: TResponse) => any;
+    /**
+     * An optional callback function to run when a fetch has failed
+     */
+    onFetchError?: (error: any) => any;
+    /**
+     * An optional callback function to run when a fetch has completed, regardless of whether it resulted in an error
+     */
+    onFetchComplete?: (response?: TResponse, error?: any) => any;
   }
 
   /** USE REQUEST TYPES */
 
   /** The type of the useRequest hook, receives execution settings and returns a fetch method detached from state and caching */
   interface UseRequest<TEndpoint extends AnyFunction> {
-    (settings?: Partial<UseRequestSettings<Partial<FirstParamOf<TEndpoint>>>>): UseRequestResponse<
+    (settings?: Partial<UseRequestSettings<Partial<FirstParamOf<TEndpoint>>, PromiseResult<ReturnType<TEndpoint>>>>): UseRequestResponse<
       PromiseResult<ReturnType<TEndpoint>>,
       Partial<FirstParamOf<TEndpoint>>
     >;
@@ -457,7 +483,7 @@ export namespace ApiHooks {
   /**
    * The basic request settings used at system, application, endpoint and hook execution level.
    */
-  export interface UseRequestSettings<TParam> {
+  export interface UseRequestSettings<TParam, TResponse> {
     /**
      * The parameters of the request can be optionally defined here.
      */
@@ -470,13 +496,25 @@ export namespace ApiHooks {
      * Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
      */
     useMockEndpoints?: boolean;
+    /**
+     * An optional callback function to run when a fetch has completed successfully
+     */
+    onFetchSuccess?: (response: TResponse) => any;
+    /**
+     * An optional callback function to run when a fetch has failed
+     */
+    onFetchError?: (error: any) => any;
+    /**
+     * An optional callback function to run when a fetch has completed, regardless of whether it resulted in an error
+     */
+    onFetchComplete?: (response?: TResponse, error?: any) => any;
   }
 
   /**
    * The type denoting the response of the useRequest hook. receives the params + settings and returns a promise of the response data detached from all state and caching.
    * NOTE: The params and fetch settings here will override the params sent to the hook execution settings, but any hook execution params will be used if nothing is passed here.
    */
-  type UseRequestResponse<TResponse, TParam> = (param?: TParam, fetchSettings?: Partial<UseRequestSettings<TParam>>) => Promise<TResponse>;
+  type UseRequestResponse<TResponse, TParam> = (param?: TParam, fetchSettings?: Partial<UseRequestSettings<TParam, TResponse>>) => Promise<TResponse>;
 
   /** UTILITY FUNCTIONS */
 
@@ -533,8 +571,8 @@ export namespace ApiHooks {
     rootKey: string,
     controller: TController,
     rootQuerySettings: UseQueryConfigSettings<any, any>,
-    rootMutationSettings: UseMutationSettings<any>,
-    rootRequestSettings: UseRequestSettings<any>,
+    rootMutationSettings: UseMutationSettings<any, any>,
+    rootRequestSettings: UseRequestSettings<any, any>,
     hookConfig: HookConfigControllerLibrary<TController>,
     mockEndpointLibrary: MockEndpointControllerLibrary<TController>,
     defaultDataLibrary: DefaultDataControllerLibrary<TController>,
@@ -551,11 +589,11 @@ export namespace ApiHooks {
       const combinedQuerySettings = Objects.mergeDeep(rootQuerySettings, querySettings);
 
       // fetch endpoint level mutation settings if available and apply on top of the passed in system and application level settings
-      const mutationSettings: Partial<UseMutationSettings<any>> = hookConfig[endpointKey]?.mutation ?? {};
+      const mutationSettings: Partial<UseMutationSettings<any, any>> = hookConfig[endpointKey]?.mutation ?? {};
       const combinedMutationSettings = Objects.mergeDeep(rootMutationSettings, mutationSettings);
 
       // fetch endpoint level request parameters if available and apply on top of the passed in system and application level settings
-      const requestSettings: Partial<UseRequestSettings<any>> = hookConfig[endpointKey]?.request ?? {};
+      const requestSettings: Partial<UseRequestSettings<any, any>> = hookConfig[endpointKey]?.request ?? {};
       const combinedRequestSettings = Objects.mergeDeep(rootRequestSettings, requestSettings);
 
       // create two promise factories - one returns the actual endpoint promise, the other returns the mock endpoint if it's been created
@@ -826,6 +864,7 @@ export namespace ApiHooks {
 
               // set up a try/catch - we're about to make the actual request
               let value: any;
+              let error: any;
               try {
                 // fetch the data value from either the real or mock endpoint, depending on the settings
                 if (testKeys || fetchSettings.useMockEndpoints) {
@@ -856,13 +895,17 @@ export namespace ApiHooks {
                     fetchSettings.maxCachingDepth
                   )
                 );
-              } catch (error) {
+                fetchSettings.onFetchSuccess?.(value);
+              } catch (e) {
                 // an error has been thrown by the server, catch it and set it in state, otherwise throw it to the consumer.
+                error = e;
                 queryLog(['Fetch failed, with error:', error], fetchSettings.debugKey);
                 dispatch?.(ApiHooksStore.Actions.error(endpointHash, finalParamHash, finalCacheKey, error, fetchSettings.maxCachingDepth));
+                fetchSettings.onFetchError?.(error);
               } finally {
                 // set the request as finished fetching in the live fetching log so that future requests won't be aborted.
                 ApiHooksGlobal.setFetching(endpointHash, finalCacheKey, false);
+                fetchSettings.onFetchComplete?.(value, error);
               }
             },
             [dispatch, setCacheKey, storedStateSlice, testKeys]
@@ -1060,7 +1103,7 @@ export namespace ApiHooks {
          * - Returns the fetch method to manually invoke, and a live response object
          * - Can only be used within a React Function Component
          */
-        useMutation: (executionSettings: Partial<UseMutationSettings<any>> = {}): UseMutationResponse<any, any, any> => {
+        useMutation: (executionSettings: Partial<UseMutationSettings<any, any>> = {}): UseMutationResponse<any, any, any> => {
           /** MARK ENDPOINT AS USED */
           React.useEffect(() => {
             endpointUsed('mutation');
@@ -1079,12 +1122,12 @@ export namespace ApiHooks {
           const [, dispatch, testKeys] = React.useContext(ApiHooksStore.Context);
 
           // store the last used fetch settings in a ref so that they can be passed to the processing hook.
-          const lastUsedSettings = React.useRef<UseMutationSettings<any>>();
+          const lastUsedSettings = React.useRef<UseMutationSettings<any, any>>();
 
           // settings - apply the hook execution settings (if any) to the passed in system, application and endpoint level.
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
-          const settingsFromHook = React.useMemo<UseMutationSettings<any>>(() => {
-            return Objects.mergeDeep(combinedMutationSettings, executionSettings) as UseMutationSettings<any>;
+          const settingsFromHook = React.useMemo<UseMutationSettings<any, any>>(() => {
+            return Objects.mergeDeep(combinedMutationSettings, executionSettings) as UseMutationSettings<any, any>;
           }, [JSON.stringify(executionSettings)]);
 
           // the method used to dispatch refetch actions - these trigger the "refetch query" behaviour.
@@ -1112,7 +1155,7 @@ export namespace ApiHooks {
           const fetch = React.useCallback<UseMutationResponse<any, any, any>[0]>(
             async (param, settings) => {
               // combine all the settings together in order to include system, application, endpoint, execution and fetch level, as well as the passed in params.
-              const finalSettings: UseMutationSettings<any> = Objects.mergeDeep(settingsFromHook, settings || {}, { parameters: param || {} });
+              const finalSettings: UseMutationSettings<any, any> = Objects.mergeDeep(settingsFromHook, settings || {}, { parameters: param || {} });
 
               // set live response to loading
               mutationLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);
@@ -1120,6 +1163,7 @@ export namespace ApiHooks {
 
               // fetch the data value from either the real or mock endpoint, depending on the settings
               let value: any;
+              let error: any;
               try {
                 if (testKeys || finalSettings.useMockEndpoints) {
                   if (!mockPromiseFactory) {
@@ -1136,6 +1180,7 @@ export namespace ApiHooks {
                 // set live response to success
                 setFetchStateResponse({ data: value, fetchingMode: 'not-fetching', isFetching: false, error: undefined });
                 mutationLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
+                finalSettings.onFetchSuccess?.(value);
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
                   const resolvedRefetchQueries = finalSettings.refetchQueries.map((query) => {
@@ -1150,15 +1195,19 @@ export namespace ApiHooks {
                   });
                   refetchQueries(resolvedRefetchQueries);
                 }
-              } catch (error) {
+              } catch (e) {
                 // set live response to failed
+                error = e;
                 setFetchStateResponse({ data: undefined, fetchingMode: 'not-fetching', isFetching: false, error });
                 mutationLog([`Fetch failed`, { error }], finalSettings.debugKey);
-                if (finalSettings.throwErrors) {
-                  throw error;
-                }
+                finalSettings.onFetchError?.(error);
+              } finally {
+                finalSettings.onFetchComplete?.(value, error);
               }
               // return the data, errors will be thrown for mutations and should be handled by the consuming component unless `throwErrors` is explicitly set to false in settings.
+              if (error && finalSettings.throwErrors) {
+                throw error;
+              }
               return value;
             },
             [settingsFromHook, refetchQueries]
@@ -1201,10 +1250,10 @@ export namespace ApiHooks {
          * - Returns the detached fetch method to manually invoke
          * - Can only be used within a React Function Component
          */
-        useRequest: (executionSettings: Partial<UseRequestSettings<any>> = {}): UseRequestResponse<any, any> => {
+        useRequest: (executionSettings: Partial<UseRequestSettings<any, any>> = {}): UseRequestResponse<any, any> => {
           // settings - apply the hook execution settings (if any) to the passed in system, application and endpoint level.
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
-          const settingsFromHook = React.useMemo<UseRequestSettings<any>>(() => {
+          const settingsFromHook = React.useMemo<UseRequestSettings<any, any>>(() => {
             const settings = { ...combinedRequestSettings, ...executionSettings };
             settings.parameters = { ...combinedMutationSettings.parameters, ...(executionSettings.parameters ?? {}) };
             return settings;
@@ -1217,7 +1266,7 @@ export namespace ApiHooks {
           const fetch = React.useCallback<UseRequestResponse<any, any>>(
             async (param, settings) => {
               // combine all the settings together in order to include system, application, endpoint, execution and fetch level, as well as the passed in params.
-              const finalSettings: UseRequestSettings<any> & { parameters?: any } = {
+              const finalSettings: UseRequestSettings<any, any> & { parameters?: any } = {
                 ...settingsFromHook,
                 ...(settings || {}),
                 ...(param ? { parameters: { ...(settingsFromHook.parameters ?? {}), ...param } } : {}),
@@ -1227,6 +1276,7 @@ export namespace ApiHooks {
 
               // fetch the data value from either the real or mock endpoint, depending on the settings
               let value: any;
+              let error: any;
               try {
                 if (testKeys || finalSettings?.useMockEndpoints) {
                   if (!mockPromiseFactory) {
@@ -1237,12 +1287,19 @@ export namespace ApiHooks {
                   value = await promiseFactory(finalSettings.parameters);
                 }
                 requestLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
-              } catch (error) {
+                finalSettings.onFetchSuccess?.(value);
+              } catch (e) {
                 // set live response to failed
+                error = e;
                 requestLog([`Fetch failed`, { finalSettings, error }], finalSettings.debugKey);
-                throw error;
+                finalSettings.onFetchError?.(error);
+              } finally {
+                finalSettings.onFetchComplete?.(value, error);
               }
               // return the data, errors will be thrown for requests and should be handled by the consuming components.
+              if (error) {
+                throw error;
+              }
               return value;
             },
             [settingsFromHook, testKeys]
@@ -1267,9 +1324,9 @@ export namespace ApiHooks {
     // apply application level query caching settings onto system level if any
     rootQuerySettings.caching = { ...rootQuerySettings.caching, ...(config.queryConfig?.caching ?? {}) };
     // apply application level mutation settings onto system level if any
-    const rootMutationSettings: UseMutationSettings<any> = { ...ApiHooksSystemSettings.systemDefaultMutation, ...(config.mutationConfig ?? {}) };
+    const rootMutationSettings: UseMutationSettings<any, any> = { ...ApiHooksSystemSettings.systemDefaultMutation, ...(config.mutationConfig ?? {}) };
     // apply application level request settings onto system level if any
-    const rootRequestSettings: UseRequestSettings<any> = { ...ApiHooksSystemSettings.systemDefaultRequest, ...(config.requestConfig ?? {}) };
+    const rootRequestSettings: UseRequestSettings<any, any> = { ...ApiHooksSystemSettings.systemDefaultRequest, ...(config.requestConfig ?? {}) };
 
     return { rootQuerySettings, rootMutationSettings, rootRequestSettings };
   }
