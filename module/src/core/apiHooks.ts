@@ -273,14 +273,43 @@ export namespace ApiHooks {
    */
   export type FetchingMode = 'not-fetching' | 'auto' | 'manual' | 'refetch';
 
+  /**
+   * Type declaration for the source of the data returned from `useQuery.
+   */
+  export type DataSource = 'cache' | 'remote';
+
   /** The type denoting the live response object returned from both the useQuery and useMutation hooks */
   export type LiveResponse<TCache, TProcessingResponse> = {
+    /**
+     * The data returned from the server, can be from a remote source or from the cache.
+     * WARNING: This must be null-checked!, it will be undefined before data is returned and can go back to undefined at any time if cache is cleared.
+     */
     data?: TCache;
+    /**
+     * The error response from the last request. Will be undefined if no request has been made or the last request did not result in an error.
+     */
     error?: any;
+    /**
+     * Whether the request is currently fetching.
+     */
     isFetching: boolean;
+    /**
+     * Either `not-fetching` | `auto` | `manual` | `refetch` depending on why the data was fetched. For a mutation, this can only be `not-fetching` or `manual`.
+     */
     fetchingMode: FetchingMode;
+    /**
+     * The typed response from the optional `processingHook` passed to application level settings. Will be undefined if no processing hook is passed.
+     */
     processed: TProcessingResponse;
+    /**
+     * The endpoint ID for this request/cache slot as a string. Will be in the format: `controller.endpoint`
+     * @example `auth.login`
+     */
     endpointID: string;
+    /**
+     * Either `remote` or `cache` depending on the source of the data returned as `data`. Will be undefined if no data is available.
+     */
+    source?: DataSource;
   };
 
   /** LIFE CYCLE SETTINGS */
@@ -707,6 +736,9 @@ export namespace ApiHooks {
           // storing the cache key in state means we can update it if the parameters change - either through the hook settings or a manual invoke
           const [cacheKey, setCacheKey] = React.useState<string>(cacheKeyValueFromHook);
 
+          // store the data source of the response - will be set to `remote` or `cache` when data is returned.
+          const [dataSource, setDataSource] = React.useState<DataSource>();
+
           // store the last used fetch settings in a ref so that they can be passed to the processing hook.
           const lastUsedSettings = React.useRef<UseQuerySettings<any, any>>();
 
@@ -821,6 +853,7 @@ export namespace ApiHooks {
               fetchingMode: ApiHooksStore.fetchingModeFromStateSliceStatus(storedStateSlice?.status),
               data: storedStateSlice?.data,
               endpointID: endpointHash,
+              dataSource,
             };
           }, [storedStateSlice, settingsFromHook]);
 
@@ -880,6 +913,7 @@ export namespace ApiHooks {
 
                 // send the data to the store by despatching the loaded action
                 queryLog(['Fetch successful, with result:', value], fetchSettings.debugKey);
+                setDataSource('remote');
                 dispatch?.(
                   ApiHooksStore.Actions.loaded(
                     endpointHash,
