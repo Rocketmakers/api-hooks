@@ -283,6 +283,36 @@ export namespace ApiHooks {
     endpointID: string;
   };
 
+  /** LIFE CYCLE SETTINGS */
+
+  export interface LifeCycleCallbackSettings<TResponse, TSettings> {
+    /**
+     * An optional callback function to run when a fetch is about to start
+     * @param settings - The final combined settings at the time of the fetch, typings will be different depending on whether it's `useQuery` or `useMutation`
+     * @param fetchingMode - Either `not-fetching` | `auto` | `manual` | `refetch` depending on why the data was fetched. For a mutation, this can only be `not-fetching` or `manual`.
+     */
+    onFetchStart?: (settings: TSettings, fetchingMode: FetchingMode) => any;
+    /**
+     * An optional callback function to run when a fetch has completed successfully
+     * @param response - The full response from the server.
+     * @param settings - The final combined settings at the time of the fetch, typings will be different depending on whether it's `useQuery` or `useMutation`
+     */
+    onFetchSuccess?: (response: TResponse, settings: TSettings) => any;
+    /**
+     * An optional callback function to run when a fetch has failed
+     * @param error - The error response from the server.
+     * @param settings - The final combined settings at the time of the fetch, typings will be different depending on whether it's `useQuery` or `useMutation`
+     */
+    onFetchError?: (error: any, settings: TSettings) => any;
+    /**
+     * An optional callback function to run when a fetch has completed, regardless of whether it resulted in an error
+     * @param response - The full response from the server, could be undefined if an error was returned.
+     * @param error - The error response from the server, will be undefined if the fetch was successful.
+     * @param settings - The final combined settings at the time of the fetch, typings will be different depending on whether it's `useQuery` or `useMutation`
+     */
+    onFetchComplete?: (response: TResponse | undefined, error: any | undefined, settings: TSettings) => any;
+  }
+
   /** CACHE KEY TYPES */
 
   export type CacheKey<TParam> = keyof TParam | ((param: TParam, context?: any) => string | number);
@@ -313,7 +343,7 @@ export namespace ApiHooks {
   /**
    * The basic query settings used at system, application, endpoint and hook execution level.
    */
-  export interface UseQuerySettings<TParam, TResponse> {
+  export interface UseQuerySettings<TParam, TResponse> extends LifeCycleCallbackSettings<TResponse, UseQuerySettings<TParam, TResponse>> {
     /**
      * Should the request fire when the component mounts? Will only fire if cache is stale - defaults to true at system level
      */
@@ -366,18 +396,6 @@ export namespace ApiHooks {
      * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
      */
     debugKey?: string;
-    /**
-     * An optional callback function to run when a fetch has completed successfully
-     */
-    onFetchSuccess?: (response: TResponse) => any;
-    /**
-     * An optional callback function to run when a fetch has failed
-     */
-    onFetchError?: (error: any) => any;
-    /**
-     * An optional callback function to run when a fetch has completed, regardless of whether it resulted in an error
-     */
-    onFetchComplete?: (response?: TResponse, error?: any) => any;
   }
 
   /**
@@ -430,7 +448,7 @@ export namespace ApiHooks {
   /**
    * The basic mutation settings used at system, application, endpoint and hook execution level.
    */
-  export interface UseMutationSettings<TParam, TResponse> {
+  export interface UseMutationSettings<TParam, TResponse> extends LifeCycleCallbackSettings<TResponse, UseMutationSettings<TParam, TResponse>> {
     /**
      * @default true
      * Should the request throw errors? Or swallow them, allowing them to be handled via the live response object?
@@ -456,18 +474,6 @@ export namespace ApiHooks {
      * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
      */
     debugKey?: string;
-    /**
-     * An optional callback function to run when a fetch has completed successfully
-     */
-    onFetchSuccess?: (response: TResponse) => any;
-    /**
-     * An optional callback function to run when a fetch has failed
-     */
-    onFetchError?: (error: any) => any;
-    /**
-     * An optional callback function to run when a fetch has completed, regardless of whether it resulted in an error
-     */
-    onFetchComplete?: (response?: TResponse, error?: any) => any;
   }
 
   /** USE REQUEST TYPES */
@@ -483,7 +489,7 @@ export namespace ApiHooks {
   /**
    * The basic request settings used at system, application, endpoint and hook execution level.
    */
-  export interface UseRequestSettings<TParam, TResponse> {
+  export interface UseRequestSettings<TParam, TResponse> extends LifeCycleCallbackSettings<TResponse, UseRequestSettings<TParam, TResponse>> {
     /**
      * The parameters of the request can be optionally defined here.
      */
@@ -496,18 +502,6 @@ export namespace ApiHooks {
      * Should the hook always use the mock endpoint to fetch data, rather than the real endpoint?
      */
     useMockEndpoints?: boolean;
-    /**
-     * An optional callback function to run when a fetch has completed successfully
-     */
-    onFetchSuccess?: (response: TResponse) => any;
-    /**
-     * An optional callback function to run when a fetch has failed
-     */
-    onFetchError?: (error: any) => any;
-    /**
-     * An optional callback function to run when a fetch has completed, regardless of whether it resulted in an error
-     */
-    onFetchComplete?: (response?: TResponse, error?: any) => any;
   }
 
   /**
@@ -862,6 +856,8 @@ export namespace ApiHooks {
               // dispatch the loading action to change the fetching state
               dispatch?.(ApiHooksStore.Actions.loading(endpointHash, finalParamHash, finalCacheKey, mode, fetchSettings.maxCachingDepth));
 
+              fetchSettings.onFetchStart?.(fetchSettings, mode);
+
               // set up a try/catch - we're about to make the actual request
               let value: any;
               let error: any;
@@ -895,17 +891,17 @@ export namespace ApiHooks {
                     fetchSettings.maxCachingDepth
                   )
                 );
-                fetchSettings.onFetchSuccess?.(value);
+                fetchSettings.onFetchSuccess?.(value, fetchSettings);
               } catch (e) {
                 // an error has been thrown by the server, catch it and set it in state, otherwise throw it to the consumer.
                 error = e;
                 queryLog(['Fetch failed, with error:', error], fetchSettings.debugKey);
                 dispatch?.(ApiHooksStore.Actions.error(endpointHash, finalParamHash, finalCacheKey, error, fetchSettings.maxCachingDepth));
-                fetchSettings.onFetchError?.(error);
+                fetchSettings.onFetchError?.(error, fetchSettings);
               } finally {
                 // set the request as finished fetching in the live fetching log so that future requests won't be aborted.
                 ApiHooksGlobal.setFetching(endpointHash, finalCacheKey, false);
-                fetchSettings.onFetchComplete?.(value, error);
+                fetchSettings.onFetchComplete?.(value, error, fetchSettings);
               }
             },
             [dispatch, setCacheKey, storedStateSlice, testKeys]
@@ -1161,6 +1157,8 @@ export namespace ApiHooks {
               mutationLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);
               setFetchStateResponse({ fetchingMode: 'manual', isFetching: true });
 
+              finalSettings.onFetchStart?.(finalSettings, 'manual');
+
               // fetch the data value from either the real or mock endpoint, depending on the settings
               let value: any;
               let error: any;
@@ -1180,7 +1178,7 @@ export namespace ApiHooks {
                 // set live response to success
                 setFetchStateResponse({ data: value, fetchingMode: 'not-fetching', isFetching: false, error: undefined });
                 mutationLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
-                finalSettings.onFetchSuccess?.(value);
+                finalSettings.onFetchSuccess?.(value, finalSettings);
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
                   const resolvedRefetchQueries = finalSettings.refetchQueries.map((query) => {
@@ -1200,9 +1198,9 @@ export namespace ApiHooks {
                 error = e;
                 setFetchStateResponse({ data: undefined, fetchingMode: 'not-fetching', isFetching: false, error });
                 mutationLog([`Fetch failed`, { error }], finalSettings.debugKey);
-                finalSettings.onFetchError?.(error);
+                finalSettings.onFetchError?.(error, finalSettings);
               } finally {
-                finalSettings.onFetchComplete?.(value, error);
+                finalSettings.onFetchComplete?.(value, error, finalSettings);
               }
               // return the data, errors will be thrown for mutations and should be handled by the consuming component unless `throwErrors` is explicitly set to false in settings.
               if (error && finalSettings.throwErrors) {
@@ -1274,6 +1272,8 @@ export namespace ApiHooks {
 
               requestLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);
 
+              finalSettings.onFetchStart?.(finalSettings, 'manual');
+
               // fetch the data value from either the real or mock endpoint, depending on the settings
               let value: any;
               let error: any;
@@ -1287,14 +1287,14 @@ export namespace ApiHooks {
                   value = await promiseFactory(finalSettings.parameters);
                 }
                 requestLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
-                finalSettings.onFetchSuccess?.(value);
+                finalSettings.onFetchSuccess?.(value, finalSettings);
               } catch (e) {
                 // set live response to failed
                 error = e;
                 requestLog([`Fetch failed`, { finalSettings, error }], finalSettings.debugKey);
-                finalSettings.onFetchError?.(error);
+                finalSettings.onFetchError?.(error, finalSettings);
               } finally {
-                finalSettings.onFetchComplete?.(value, error);
+                finalSettings.onFetchComplete?.(value, error, finalSettings);
               }
               // return the data, errors will be thrown for requests and should be handled by the consuming components.
               if (error) {
