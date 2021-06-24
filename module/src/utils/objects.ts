@@ -10,6 +10,15 @@ export namespace Objects {
   }
 
   /**
+   * A basic deep clone for objects
+   * - WARNING: object must be OK to go through `JSON.stringify`
+   * @param object The object to clone
+   * @returns The cloned object
+   */
+  export function deepClone<TObject>(object: TObject): TObject {
+    return JSON.parse(JSON.stringify(object));
+  }
+  /**
    * Deep merge two objects.
    * @param target The target object to merge into
    * @param source The new source objects

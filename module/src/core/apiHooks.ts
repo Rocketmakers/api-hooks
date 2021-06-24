@@ -26,7 +26,7 @@ export namespace ApiHooks {
   type PromiseResult<TPromise> = TPromise extends Promise<infer TResult> ? TResult : never;
 
   /** general utility type - gets the type of the first parameter in a function */
-  type FirstParamOf<TFunc extends AnyFunction> = Parameters<TFunc>[0];
+  export type FirstParamOf<TFunc extends AnyFunction> = Parameters<TFunc>[0];
 
   /** general utility type - differentiates between the three types of hook that can be used for an endpoint */
   type HookType = 'query' | 'mutation' | 'request';
@@ -731,7 +731,7 @@ export namespace ApiHooks {
                 data: defaultDataValue,
                 status: 'loaded',
                 timestamp: applicationStartedTimestamp,
-                shouldRefetchData: false,
+                shouldRefetchData: undefined,
               };
             }
             // check for "initialData" passed to hook, and use that on first render
@@ -742,7 +742,7 @@ export namespace ApiHooks {
                 data: settingsFromHook.initialData,
                 status: 'loaded',
                 timestamp: applicationStartedTimestamp,
-                shouldRefetchData: false,
+                shouldRefetchData: undefined,
               };
             }
             return currentStoredStateSlice;
@@ -909,8 +909,10 @@ export namespace ApiHooks {
 
           // invoke - called when the component mounts if autoInvoke = true, and from the manual invoke method
           // checks whether data should be fetched based on cache settings, error status & whether the params have changed
-          const invoke = React.useCallback<(param?: any, fetchSettings?: UseQueryFetchSettings<any>, mode?: FetchingMode) => void>(
-            (param, fetchSettings, mode = 'auto') => {
+          const invoke = React.useCallback<
+            (param?: any, fetchSettings?: UseQueryFetchSettings<any>, mode?: FetchingMode, forceExclusiveParams?: boolean) => void
+          >(
+            (param, fetchSettings, mode = 'auto', forceExclusiveParams = false) => {
               // merge any params into existing settings passed from higher levels
               const finalSettings = Objects.mergeDeep(settingsFromHook, { parameters: param || {} }) as typeof settingsFromHook;
 
@@ -936,6 +938,10 @@ export namespace ApiHooks {
                     queryLog(['Loaded stored bookmark params', previousValues], finalSettings.debugKey);
                   }
                 }
+              }
+
+              if (forceExclusiveParams && param) {
+                finalSettings.parameters = param;
               }
 
               // create a new param hash for comparison, we should make sure we invoke if the params are different to what's cached.
@@ -1052,8 +1058,23 @@ export namespace ApiHooks {
           React.useEffect(() => {
             if (!isFirstRender.current) {
               if (storedStateSlice?.shouldRefetchData) {
-                queryLog(['Cache reset - refetch triggered', { parameters: lastUsedSettings.current?.parameters }], settingsFromHook.debugKey);
-                invoke(lastUsedSettings.current?.parameters, undefined, 'refetch');
+                let paramsToUse = lastUsedSettings.current?.parameters;
+                let forceExclusiveParams = false;
+                if (storedStateSlice.shouldRefetchData.params) {
+                  switch (storedStateSlice.shouldRefetchData.paramMode ?? 'merge') {
+                    case 'merge':
+                      paramsToUse = Objects.mergeDeep(paramsToUse, storedStateSlice.shouldRefetchData.params);
+                      break;
+                    case 'replace':
+                      paramsToUse = storedStateSlice.shouldRefetchData.params;
+                      forceExclusiveParams = true;
+                      break;
+                    default:
+                      throw new Error(`Invalid param override mode sent to refetch query ${storedStateSlice.shouldRefetchData.paramMode}`);
+                  }
+                }
+                queryLog(['Refetch triggered', { parameters: paramsToUse }], settingsFromHook.debugKey);
+                invoke(paramsToUse, undefined, 'refetch', forceExclusiveParams);
               }
             }
           }, [!!storedStateSlice?.shouldRefetchData]);
@@ -1131,17 +1152,24 @@ export namespace ApiHooks {
             (queries) => {
               for (const query of queries) {
                 let finalCacheKeyValue: string | number | undefined;
+                let queryConfig: ApiHooksStore.RefetchConfig | undefined;
                 try {
                   finalCacheKeyValue = ApiHooksCaching.cacheKeyValueFromRefetchQuery(
                     settingsFromHook.parameters,
                     query,
                     settingsFromHook.refetchQueryContext
                   );
+                  if (query.paramOverride) {
+                    queryConfig = {
+                      params: Objects.deepClone(query.paramOverride),
+                      paramMode: query.paramOverrideMode ?? ('merge' as ApiHooksStore.RefetchParamOverrideMode),
+                    };
+                  }
                 } catch (error) {
                   throw new Error(`API Hooks Mutation Error, Endpoint: ${endpointHash} - ${error?.message ?? 'Refetch query failed'}`);
                 }
                 mutationLog([`Refetch query processed`, { query, finalCacheKeyValue }], settingsFromHook.debugKey);
-                dispatch?.(ApiHooksStore.Actions.refetch(query.endpointHash, finalCacheKeyValue?.toString()));
+                dispatch?.(ApiHooksStore.Actions.refetch(query.endpointHash, finalCacheKeyValue?.toString(), queryConfig));
               }
             },
             [dispatch, settingsFromHook]

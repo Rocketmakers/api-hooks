@@ -1,4 +1,5 @@
 import { ApiHooks } from './apiHooks';
+import { ApiHooksStore } from './store';
 
 export namespace EndpointIDs {
   /** general utility type - represents a function  */
@@ -15,11 +16,13 @@ export namespace EndpointIDs {
   type ControllerMethods<TApiClient> = { [TControllerKey in keyof TApiClient]: EndpointMethods<TApiClient[TControllerKey]> };
 
   /** The type of the endpointID factory - receives optional caching config an returns a response object which can be used to identify this endpoint within global state */
-  type EndpointIDFactory = <TMutationParam>(config?: Config<TMutationParam>) => Response<TMutationParam>;
+  type EndpointIDFactory<TParam> = <TMutationParam>(config?: Config<TMutationParam, TParam>) => Response<TMutationParam>;
 
   /** The type applying the endpointID factory method to each controller endpoint. */
   type EndpointMethods<TApiController> = {
-    [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction ? EndpointIDFactory : never;
+    [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction
+      ? EndpointIDFactory<ApiHooks.FirstParamOf<TApiController[TEndpointKey]>>
+      : never;
   };
 
   /** CACHE IDENTIFIER TYPES */
@@ -27,7 +30,7 @@ export namespace EndpointIDs {
   /**
    * The config passed to the EndpointID factory method.
    */
-  export interface Config<TMutationParam> {
+  export interface Config<TMutationParam, TParam> {
     /**
      * (optional) The value used to cache data against. Allows a specific state slice to be identified within an endpoint's cache, overrides cacheKeyFromMutationParam
      */
@@ -36,13 +39,24 @@ export namespace EndpointIDs {
      * (optional) Allows the above cacheKeyValue to be derived from the parameter of a mutation.
      */
     cacheKeyFromMutationParam?: ApiHooks.CacheKey<TMutationParam>;
+    /**
+     * (optional) By default, a refetch query will send the last parameters used, if you need to intercept that though you can do it here, these params will be used instead
+     */
+    paramOverride?: Partial<TParam>;
+    /**
+     * (optional) How should the `paramOverride` behave?
+     * - `replace` will send ONLY the params in `paramOverride`.
+     * - `merge` will deep merge the params in `paramOverride` with those sent with the last query request.
+     * @default merge
+     */
+    paramOverrideMode?: ApiHooksStore.RefetchParamOverrideMode;
   }
 
   /**
    * The response returned by EndpointID factory method.
    * Contains everything passed into config as well as it's own properties
    */
-  export interface Response<TMutationParam> extends Config<TMutationParam> {
+  export interface Response<TMutationParam> extends Config<TMutationParam, any> {
     /**
      * The string used to identify the endpoint in global state.
      */
@@ -63,7 +77,7 @@ export namespace EndpointIDs {
         // A string unique to the endpoint - combines the controller and endpoint names
         const endpointHash = `${controllerKey}.${endpointKey}`;
         const controllerDictionary = { ...incomingControllerDictionary };
-        controllerDictionary[endpointKey] = (config: Config<any> | undefined): Response<any> => {
+        controllerDictionary[endpointKey] = (config: Config<any, any> | undefined): Response<any> => {
           return { endpointHash, ...(config ?? {}) };
         };
         return controllerDictionary;

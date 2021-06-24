@@ -19,4 +19,5 @@ export const apiHooks = ApiHooks.create(apiClient, {
   },
   processingHook,
   hookConfigFactory: endpointMapFactory,
+
 })

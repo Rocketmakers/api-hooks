@@ -20,8 +20,19 @@ export namespace ApiHooksStore {
   /** Root type for the state object */
   export type State = { [endpointKey: string]: { [paramHash: string]: StateSlice<any> } };
 
-  //* * Type for a test key to be used when called from a test file */
+  /** Type for a test key to be used when called from a test file */
   export type TestKeyState = { [endpointKey: string]: { testKey: string } };
+
+  /** How to apply override params to a refetch query */
+  export type RefetchParamOverrideMode = 'merge' | 'replace';
+
+  /** The optional configuration applied to a refetch query */
+  export interface RefetchConfig {
+    /** Params to override */
+    params?: any;
+    /** How to override them */
+    paramMode?: RefetchParamOverrideMode;
+  }
 
   /**
    * Type for a single slice of data
@@ -51,7 +62,7 @@ export namespace ApiHooksStore {
     /**
      * A bool that triggers a refetch, this is set by the refetch queries logic.
      */
-    shouldRefetchData?: boolean;
+    shouldRefetchData?: RefetchConfig;
   }
 
   /** UTILITIES */
@@ -155,6 +166,10 @@ export namespace ApiHooksStore {
        *  (optional) A key to refetch - each unique key will represent a different state slice in the dictionary.
        */
       cacheKeyValue?: string;
+      /**
+       * (optional) The param override config for the refetch query
+       */
+      refetchConfig?: RefetchConfig;
     }
 
     export type GenericAction = Action | ResetAction | RefetchAction;
@@ -201,7 +216,7 @@ export namespace ApiHooksStore {
         cacheKeyValue,
         paramHash,
         maxCachingDepth,
-        shouldRefetchData: false,
+        shouldRefetchData: undefined,
         isSilent,
       };
     }
@@ -233,7 +248,7 @@ export namespace ApiHooksStore {
         data,
         maxCachingDepth,
         error: undefined,
-        shouldRefetchData: false,
+        shouldRefetchData: undefined,
         isSilent,
       };
     }
@@ -272,13 +287,15 @@ export namespace ApiHooksStore {
      * Factory function for creating an 'refetch' action
      * @param endpointKey (optional) Key of the endpoint to refetch - will mark all endpoints as needing a refetch of not passed
      * @param cacheKeyValue (optional) A key to refetch - each unique key will represent a different state slice in the dictionary.
+     * @param refetchConfig (optional) The param override config for the refetch query.
      * @returns An action object to be dispatched
      */
     export function refetch(
       endpointKey?: string,
-      cacheKeyValue?: string
+      cacheKeyValue?: string,
+      refetchConfig?: RefetchConfig
     ): React.ReducerAction<React.Reducer<State, Actions.Action | Actions.RefetchAction>> {
-      return { refetch: true, endpointKey, cacheKeyValue };
+      return { refetch: true, endpointKey, cacheKeyValue, refetchConfig };
     }
   }
 
@@ -317,7 +334,7 @@ export namespace ApiHooksStore {
       }
       return {};
     }
-    // check for refetch action and set the shouldRefetchData endpoint to 'true' on the appropriate endpoints, triggering a refetch.
+    // check for refetch action and set the shouldRefetchData endpoint to an object on the appropriate endpoints, triggering a refetch.
     if (Actions.isRefetchAction(action)) {
       const { endpointKey, cacheKeyValue } = action;
       let stateIsModified = false;
@@ -326,7 +343,10 @@ export namespace ApiHooksStore {
         if (newState[endpointKeyIndex] && (!endpointKey || endpointKey === endpointKeyIndex)) {
           Object.keys(newState[endpointKeyIndex]).forEach((cacheKeyValueIndex) => {
             if (newState[endpointKeyIndex][cacheKeyValueIndex] && (!cacheKeyValue || cacheKeyValue === cacheKeyValueIndex)) {
-              newState[endpointKeyIndex][cacheKeyValueIndex] = { ...newState[endpointKeyIndex][cacheKeyValueIndex], shouldRefetchData: true };
+              newState[endpointKeyIndex][cacheKeyValueIndex] = {
+                ...newState[endpointKeyIndex][cacheKeyValueIndex],
+                shouldRefetchData: action.refetchConfig ?? {},
+              };
               stateIsModified = true;
             }
           });

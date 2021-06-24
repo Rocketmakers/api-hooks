@@ -10,12 +10,7 @@ export const endpointMapFactory: ApiHooks.HookConfigLibraryFactory<typeof apiCli
    *****************************/
 
   // the "get user list" query returns a list rather than a single instance of a data type, it doesn't need a cache key.
-  endpointMap.user.getUserList.query = {
-    cacheKey: () => "nutties",
-    parameters: {
-      throwServerError: false,
-    },
-  }
+  endpointMap.user.getUserList.query = {}
 
   // the "get user" query returns a single instance of a data type, the cache key should be the primary key.
   endpointMap.user.getUser.query = {
@@ -31,7 +26,7 @@ export const endpointMapFactory: ApiHooks.HookConfigLibraryFactory<typeof apiCli
   // - our list reflects this
   // - our single user instance reflects this, but only for the cache key (id) that's been updated.
   endpointMap.user.updateUser.mutation = {
-    refetchQueries: [endpointIdentifiers.user.getUserList(), endpointIdentifiers.user.getUser({ cacheKeyFromMutationParam: "id" })],
+    refetchQueries: [endpointIdentifiers.user.getUserList(), endpointIdentifiers.user.getUser({ cacheKeyFromMutationParam: "id", paramOverride: { requestDelay: 5000 } })],
   }
 
   // the "delete user" mutation removes a user from the system, so we need to make sure:

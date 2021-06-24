@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Link } from "react-router-dom"
 import { apiHooks } from "../../state/apiHooks"
 
 export const Home: React.FC = () => {
@@ -10,11 +11,7 @@ export const Home: React.FC = () => {
     },
     ,
     manual,
-  ] = apiHooks.user.getUserList.useQuery({
-    parameters: {
-      requestDelay: 5000,
-    },
-  })
+  ] = apiHooks.user.getUserList.useQuery()
 
   return (
     <div className="home">
@@ -31,7 +28,9 @@ export const Home: React.FC = () => {
           <tbody>
             {data.map((user) => (
               <tr key={user.id}>
-                <td>{user.firstName}</td>
+                <td>
+                  <Link to={`/${user.id}`}>{user.firstName}</Link>
+                </td>
                 <td>{user.lastName}</td>
                 <td>{user.email}</td>
               </tr>
