@@ -561,7 +561,7 @@ endpointSettings.exampleMutations.updateUser.mutation = {
   ],
 }
 ```
-The `paramOverrideMode` can be `merge` or `fetch` and will dictate whether the `paramOverride` params merge with the last params used, or replace them entirely, when performing the refetch.
+The `paramOverrideMode` can be `merge` or `replace` and will dictate whether the `paramOverride` params merge with the last params used, or replace them entirely, when performing the refetch.
 
 Refetch queries can also be compiled dynamically based on the settings passed to the mutation, do this by passing a function instead of an array, the function will receive the settings as a parameter. For example:
 
