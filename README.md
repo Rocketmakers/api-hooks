@@ -537,13 +537,47 @@ NOTE:
 
 ```TypeScript
 endpointSettings.exampleMutations.updateUser.mutation = {
-    refetchQueries: [
-      endpointIds.exampleQueries.getUser({ cacheKeyFromMutationParam: data => data.user.id }),
-      endpointIds.exampleQueries.getUserList()
-    ],
-  }
+  refetchQueries: [
+    endpointIds.exampleQueries.getUser({ cacheKeyFromMutationParam: data => data.user.id }),
+    endpointIds.exampleQueries.getUserList()
+  ],
+}
 ```
 
+### Advanced refetch query management
+
+By default, an on-screen query that has been asked to perform a refetch will do so using the last parameters that were sent to it. If, however, you want to intercept that functionality, you can send some query params yourself.
+
+This is particularly useful with paged queries, maybe the last request was for page `3` for example, and you want to ensure that the refetch request is for page `1`. For example:
+
+```TypeScript
+endpointSettings.exampleMutations.updateUser.mutation = {
+  refetchQueries: [
+    endpointIds.exampleQueries.getUser({ cacheKeyFromMutationParam: data => data.user.id }),
+    endpointIds.exampleQueries.getUserList({
+      paramOverride: { page: 1 },
+      paramOverrideMode: 'merge'
+    })
+  ],
+}
+```
+The `paramOverrideMode` can be `merge` or `fetch` and will dictate whether the `paramOverride` params merge with the last params used, or replace them entirely, when performing the refetch.
+
+Refetch queries can also be compiled dynamically based on the settings passed to the mutation, do this by passing a function instead of an array, the function will receive the settings as a parameter. For example:
+
+```TypeScript
+endpointMap.user.updateUser.mutation = {
+  refetchQueries: (settings) => {
+    const queries = [endpointIdentifiers.user.getUserList()]
+    if (settings.parameters?.id) {
+      queries.push(endpointIdentifiers.user.getUser({ cacheKeyValue: settings.parameters?.id }))
+    }
+    return [endpointIdentifiers.user.getUserList()]
+  },
+}
+```
+
+This example will perform an extra refetch if an optional param is passed.
 ---
 
 ## Advanced features - Default Data

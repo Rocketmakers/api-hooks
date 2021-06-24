@@ -442,8 +442,11 @@ export namespace ApiHooks {
   export type UseMutationResponse<TResponse, TParam, TProcessingResponse> = [
     (param?: TParam, fetchSettings?: Partial<UseMutationSettings<TParam, TResponse>>) => Promise<TResponse>,
     LiveResponse<TResponse, TProcessingResponse>,
-    (refetchQueries: EndpointIDs.Response<TParam>[]) => void
+    (refetchQueries: RefetchQueryDefinition<TParam, UseMutationSettings<TParam, TResponse>>) => void
   ];
+
+  /**  */
+  export type RefetchQueryDefinition<TParam, TSettings> = EndpointIDs.Response<TParam>[] | ((settings: TSettings) => EndpointIDs.Response<TParam>[]);
 
   /**
    * The basic mutation settings used at system, application, endpoint and hook execution level.
@@ -465,7 +468,7 @@ export namespace ApiHooks {
     /**
      * A set of endpoint IDs denoting queries to be re-fetched after the mutation has happened.
      */
-    refetchQueries?: EndpointIDs.Response<TParam>[];
+    refetchQueries?: RefetchQueryDefinition<TParam, UseMutationSettings<TParam, TResponse>>;
     /**
      * An optional piece of data to send to endpoint level refetch queries in order to form a cache key.
      */
@@ -1150,14 +1153,16 @@ export namespace ApiHooks {
           // the method used to dispatch refetch actions - these trigger the "refetch query" behaviour.
           const refetchQueries = React.useCallback<UseMutationResponse<any, any, any>[2]>(
             (queries) => {
-              for (const query of queries) {
+              const settingsToUse = lastUsedSettings.current ?? settingsFromHook;
+              const parsedQueries = typeof queries === 'function' ? queries(settingsToUse) : queries;
+              for (const query of parsedQueries) {
                 let finalCacheKeyValue: string | number | undefined;
                 let queryConfig: ApiHooksStore.RefetchConfig | undefined;
                 try {
                   finalCacheKeyValue = ApiHooksCaching.cacheKeyValueFromRefetchQuery(
-                    settingsFromHook.parameters,
+                    settingsToUse.parameters,
                     query,
-                    settingsFromHook.refetchQueryContext
+                    settingsToUse.refetchQueryContext
                   );
                   if (query.paramOverride) {
                     queryConfig = {
@@ -1168,7 +1173,7 @@ export namespace ApiHooks {
                 } catch (error) {
                   throw new Error(`API Hooks Mutation Error, Endpoint: ${endpointHash} - ${error?.message ?? 'Refetch query failed'}`);
                 }
-                mutationLog([`Refetch query processed`, { query, finalCacheKeyValue }], settingsFromHook.debugKey);
+                mutationLog([`Refetch query processed`, { query, finalCacheKeyValue }], settingsToUse.debugKey);
                 dispatch?.(ApiHooksStore.Actions.refetch(query.endpointHash, finalCacheKeyValue?.toString(), queryConfig));
               }
             },
@@ -1200,7 +1205,7 @@ export namespace ApiHooks {
                   value = await promiseFactory(finalSettings.parameters);
                 }
 
-                // store final settings used for processing hook
+                // store final settings used for processing hook and refetch queries.
                 lastUsedSettings.current = finalSettings;
 
                 // set live response to success
@@ -1209,17 +1214,7 @@ export namespace ApiHooks {
                 finalSettings.onFetchSuccess?.(value, finalSettings);
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
-                  const resolvedRefetchQueries = finalSettings.refetchQueries.map((query) => {
-                    return {
-                      ...query,
-                      cacheKeyValue: ApiHooksCaching.cacheKeyValueFromRefetchQuery(
-                        finalSettings.parameters,
-                        query,
-                        finalSettings.refetchQueryContext
-                      ),
-                    };
-                  });
-                  refetchQueries(resolvedRefetchQueries);
+                  refetchQueries(finalSettings.refetchQueries);
                 }
               } catch (e) {
                 // set live response to failed
