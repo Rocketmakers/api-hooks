@@ -8,18 +8,18 @@ export namespace EndpointIDs {
   /** CREATION TYPES */
 
   /** The root type of the endpointIDs object, represents a dictionary of controllers */
-  type ControllerMethodsMulti<TApiClientDictionary> = {
+  export type ControllerMethodsMulti<TApiClientDictionary> = {
     [TClientKey in keyof TApiClientDictionary]: ControllerMethods<TApiClientDictionary[TClientKey]>;
   };
 
   /** The root type of the endpointIDs object, represents a dictionary of controllers */
-  type ControllerMethods<TApiClient> = { [TControllerKey in keyof TApiClient]: EndpointMethods<TApiClient[TControllerKey]> };
+  export type ControllerMethods<TApiClient> = { [TControllerKey in keyof TApiClient]: EndpointMethods<TApiClient[TControllerKey]> };
 
   /** The type of the endpointID factory - receives optional caching config an returns a response object which can be used to identify this endpoint within global state */
-  type EndpointIDFactory<TParam> = <TMutationParam>(config?: Config<TMutationParam, TParam>) => Response<TMutationParam>;
+  export type EndpointIDFactory<TParam> = <TMutationParam>(config?: Config<TMutationParam, TParam>) => Response<TMutationParam>;
 
   /** The type applying the endpointID factory method to each controller endpoint. */
-  type EndpointMethods<TApiController> = {
+  export type EndpointMethods<TApiController> = {
     [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction
       ? EndpointIDFactory<ApiHooks.FirstParamOf<TApiController[TEndpointKey]>>
       : never;
