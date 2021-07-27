@@ -5,6 +5,8 @@ import { HashRouter } from "react-router-dom"
 import { ArmstrongConfig, DialogProvider, ToastProvider } from "@rocketmakers/armstrong"
 import { Shell } from "./shell"
 
+import "./logs"
+
 import "./theme/theme.scss"
 
 ArmstrongConfig.setLocale("en-gb")

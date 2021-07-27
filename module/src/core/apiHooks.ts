@@ -5,6 +5,7 @@ import { ApiHooksSystemSettings } from './systemSettings';
 import { ApiHooksGlobal } from './global';
 import { EndpointIDs } from './endpointIDs';
 import { Objects } from '../utils/objects';
+import { ApiHooksEvents } from './events';
 
 /**
  * API Hooks
@@ -29,7 +30,7 @@ export namespace ApiHooks {
   export type FirstParamOf<TFunc extends AnyFunction> = Parameters<TFunc>[0];
 
   /** general utility type - differentiates between the three types of hook that can be used for an endpoint */
-  type HookType = 'query' | 'mutation' | 'request';
+  export type HookType = 'query' | 'mutation' | 'request';
 
   /** CLIENT CREATION TYPES */
 
@@ -859,6 +860,7 @@ export namespace ApiHooks {
               // dispatch the loading action to change the fetching state
               dispatch?.(ApiHooksStore.Actions.loading(endpointHash, finalParamHash, finalCacheKey, mode, fetchSettings.maxCachingDepth));
 
+              ApiHooksEvents.onFetchStart.executeEventHooks(endpointHash, 'query');
               fetchSettings.onFetchStart?.(fetchSettings, mode);
 
               // set up a try/catch - we're about to make the actual request
@@ -894,12 +896,14 @@ export namespace ApiHooks {
                     fetchSettings.maxCachingDepth
                   )
                 );
+                ApiHooksEvents.onFetchSuccess.executeEventHooks(endpointHash, 'query', value);
                 fetchSettings.onFetchSuccess?.(value, fetchSettings);
               } catch (e) {
                 // an error has been thrown by the server, catch it and set it in state, otherwise throw it to the consumer.
                 error = e;
                 queryLog(['Fetch failed, with error:', error], fetchSettings.debugKey);
                 dispatch?.(ApiHooksStore.Actions.error(endpointHash, finalParamHash, finalCacheKey, error, fetchSettings.maxCachingDepth));
+                ApiHooksEvents.onFetchError.executeEventHooks(endpointHash, 'query', error);
                 fetchSettings.onFetchError?.(error, fetchSettings);
               } finally {
                 // set the request as finished fetching in the live fetching log so that future requests won't be aborted.
@@ -1190,6 +1194,7 @@ export namespace ApiHooks {
               mutationLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);
               setFetchStateResponse({ fetchingMode: 'manual', isFetching: true });
 
+              ApiHooksEvents.onFetchStart.executeEventHooks(endpointHash, 'mutation');
               finalSettings.onFetchStart?.(finalSettings, 'manual');
 
               // fetch the data value from either the real or mock endpoint, depending on the settings
@@ -1211,6 +1216,7 @@ export namespace ApiHooks {
                 // set live response to success
                 setFetchStateResponse({ data: value, fetchingMode: 'not-fetching', isFetching: false, error: undefined });
                 mutationLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
+                ApiHooksEvents.onFetchSuccess.executeEventHooks(endpointHash, 'mutation', value);
                 finalSettings.onFetchSuccess?.(value, finalSettings);
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
@@ -1221,6 +1227,7 @@ export namespace ApiHooks {
                 error = e;
                 setFetchStateResponse({ data: undefined, fetchingMode: 'not-fetching', isFetching: false, error });
                 mutationLog([`Fetch failed`, { error }], finalSettings.debugKey);
+                ApiHooksEvents.onFetchError.executeEventHooks(endpointHash, 'mutation', error);
                 finalSettings.onFetchError?.(error, finalSettings);
               } finally {
                 finalSettings.onFetchComplete?.(value, error, finalSettings);
@@ -1295,6 +1302,7 @@ export namespace ApiHooks {
 
               requestLog([`Fetch started`, { finalSettings }], finalSettings.debugKey);
 
+              ApiHooksEvents.onFetchStart.executeEventHooks(endpointHash, 'request');
               finalSettings.onFetchStart?.(finalSettings, 'manual');
 
               // fetch the data value from either the real or mock endpoint, depending on the settings
@@ -1310,11 +1318,13 @@ export namespace ApiHooks {
                   value = await promiseFactory(finalSettings.parameters);
                 }
                 requestLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
+                ApiHooksEvents.onFetchSuccess.executeEventHooks(endpointHash, 'request', value);
                 finalSettings.onFetchSuccess?.(value, finalSettings);
               } catch (e) {
                 // set live response to failed
                 error = e;
                 requestLog([`Fetch failed`, { finalSettings, error }], finalSettings.debugKey);
+                ApiHooksEvents.onFetchError.executeEventHooks(endpointHash, 'request', error);
                 finalSettings.onFetchError?.(error, finalSettings);
               } finally {
                 finalSettings.onFetchComplete?.(value, error, finalSettings);
