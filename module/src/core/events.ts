@@ -75,9 +75,9 @@ export namespace ApiHooksEvents {
 
   export type OnBeforeInitialStateCallback = (testKeys?: ApiHooksStore.TestKeyState) => ApiHooksStore.State | undefined;
   export type OnStateUpdated = (state: ApiHooksStore.State, testKeys?: ApiHooksStore.TestKeyState) => void;
-  export type OnFetchStart = (endpointID: string, hookType: ApiHooks.HookType) => void;
-  export type OnFetchSuccess = (endpointID: string, hookType: ApiHooks.HookType, response: any) => void;
-  export type OnFetchError = (endpointID: string, hookType: ApiHooks.HookType, error: any) => void;
+  export type OnFetchStart = (endpointID: string, parameters: any, hookType: ApiHooks.HookType) => void;
+  export type OnFetchSuccess = (endpointID: string, parameters: any, hookType: ApiHooks.HookType, response: any) => void;
+  export type OnFetchError = (endpointID: string, parameters: any, hookType: ApiHooks.HookType, error: any) => void;
 
   /** MANAGERS */
 
@@ -98,19 +98,19 @@ export namespace ApiHooksEvents {
 
   /**
    * The "onFetchStart" event is triggered every time the APIHooks state is changed.
-   * - Callbacks will receive the endpointID and hook type.
+   * - Callbacks will receive the endpointID, parameters (typed as any because it depends on the endpoint, can be cast.) and hook type.
    */
   export const onFetchStart = new EventManager<OnFetchStart>();
 
   /**
    * The "onFetchSuccess" event is triggered every time the APIHooks state is changed.
-   * - Callbacks will receive the endpointID, hook type, and API response (typed as any because it depends on the endpoint, can be cast.)
+   * - Callbacks will receive the endpointID, parameters (typed as any because it depends on the endpoint, can be cast.), hook type, and API response (typed as any because it depends on the endpoint, can be cast.)
    */
   export const onFetchSuccess = new EventManager<OnFetchSuccess>();
 
   /**
    * The "onFetchError" event is triggered every time the APIHooks state is changed.
-   * - Callbacks will receive the endpointID, hook type, and API error (typed as any)
+   * - Callbacks will receive the endpointID, parameters (typed as any because it depends on the endpoint, can be cast.), hook type, and API error (typed as any)
    */
   export const onFetchError = new EventManager<OnFetchError>();
 }
