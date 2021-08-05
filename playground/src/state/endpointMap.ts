@@ -17,29 +17,16 @@ export const endpointMapFactory: ApiHooks.HookConfigLibraryFactory<typeof apiCli
     cacheKey: "id",
   }
 
-  // the "add user" mutation creates a new user, so we need to make sure our list of users reflects this.
-  endpointMap.user.addUser.mutation = {
-    refetchQueries: [endpointIdentifiers.user.getUserList()],
-  }
-
   // the "update user" mutation changes a user's data, so we need to make sure:
   // - our list reflects this
   // - our single user instance reflects this, but only for the cache key (id) that's been updated.
   endpointMap.user.updateUser.mutation = {
     refetchQueries: (settings) => {
-      const queries = [endpointIdentifiers.user.getUserList()]
       if (settings.parameters?.id) {
-        queries.push(endpointIdentifiers.user.getUser({ cacheKeyValue: settings.parameters?.id }))
+        return [endpointIdentifiers.user.getUser({ cacheKeyValue: settings.parameters?.id })]
       }
-      return [endpointIdentifiers.user.getUserList()]
+      return []
     },
-  }
-
-  // the "delete user" mutation removes a user from the system, so we need to make sure:
-  // - our list reflects this
-  // - our single user instance reflects this, but only for the cache key (id) that's been updated.
-  endpointMap.user.deleteUser.mutation = {
-    refetchQueries: [endpointIdentifiers.user.getUserList(), endpointIdentifiers.user.getUser({ cacheKeyFromMutationParam: "id" })],
   }
 
   return endpointMap

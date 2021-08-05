@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
-import { ApiHooksEvents, ApiHooksStore } from "@rocketmakers/api-hooks"
+import { ApiHooksEvents, ApiHooksResponders, ApiHooksStore } from "@rocketmakers/api-hooks"
 import { HashRouter } from "react-router-dom"
 import { ArmstrongConfig, DialogProvider, ToastProvider } from "@rocketmakers/armstrong"
 import { Shell } from "./shell"
@@ -29,9 +29,11 @@ class App extends React.Component {
       <ApiHooksStore.Provider>
         <ToastProvider>
           <DialogProvider>
-            <HashRouter>
-              <Shell />
-            </HashRouter>
+            <ApiHooksResponders.Provider>
+              <HashRouter>
+                <Shell />
+              </HashRouter>
+            </ApiHooksResponders.Provider>
           </DialogProvider>
         </ToastProvider>
       </ApiHooksStore.Provider>

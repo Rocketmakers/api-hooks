@@ -6,6 +6,7 @@ import { ApiHooksGlobal } from './global';
 import { EndpointIDs } from './endpointIDs';
 import { Objects } from '../utils/objects';
 import { ApiHooksEvents } from './events';
+import { ApiHooksResponders } from './responders';
 
 /**
  * API Hooks
@@ -24,7 +25,7 @@ export namespace ApiHooks {
   type AnyFunction = (param: any) => any;
 
   /** general utility type - gets the type of a promise result from a promise */
-  type PromiseResult<TPromise> = TPromise extends Promise<infer TResult> ? TResult : never;
+  export type PromiseResult<TPromise> = TPromise extends Promise<infer TResult> ? TResult : never;
 
   /** general utility type - gets the type of the first parameter in a function */
   export type FirstParamOf<TFunc extends AnyFunction> = Parameters<TFunc>[0];
@@ -898,6 +899,13 @@ export namespace ApiHooks {
                 );
                 ApiHooksEvents.onFetchSuccess.executeEventHooks(endpointHash, fetchSettings.parameters, 'query', value);
                 fetchSettings.onFetchSuccess?.(value, fetchSettings);
+
+                ApiHooksResponders.registeredQueryListeners
+                  .filter((rl) => rl.endpointHash === endpointHash)
+                  .forEach((rl) => {
+                    queryLog(['Executing responder listener'], fetchSettings.debugKey);
+                    rl.callback({ data: value, cacheKey: finalCacheKey, params: fetchSettings.parameters, settings: fetchSettings });
+                  });
               } catch (e) {
                 // an error has been thrown by the server, catch it and set it in state, otherwise throw it to the consumer.
                 error = e;

@@ -46,7 +46,7 @@ export namespace ApiHooksCaching {
   /** CONSTANTS */
 
   /** The system default cache key for when one isn't passed via the settings. */
-  const defaultCacheKey = 'all-data';
+  export const defaultCacheKey = 'all-data';
 
   /** SETTINGS */
 
