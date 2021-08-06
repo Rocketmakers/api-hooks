@@ -63,6 +63,10 @@ export namespace ApiHooksStore {
      * A bool that triggers a refetch, this is set by the refetch queries logic.
      */
     shouldRefetchData?: RefetchConfig;
+    /**
+     * The current caching depth of the endpoint
+     */
+    maxCachingDepth: number;
   }
 
   /** UTILITIES */
@@ -237,11 +241,12 @@ export namespace ApiHooksStore {
       cacheKeyValue: string,
       data: TData,
       maxCachingDepth: number,
+      timeStamp?: number,
       isSilent = false
     ): React.ReducerAction<React.Reducer<State, GenericAction>> {
       return {
         status: 'loaded',
-        timestamp: Date.now(),
+        timestamp: timeStamp ?? Date.now(),
         endpointKey,
         cacheKeyValue,
         paramHash,
@@ -361,7 +366,7 @@ export namespace ApiHooksStore {
       return state;
     }
     // rebuild the state object by applying changes from the action to the current state
-    const { endpointKey, cacheKeyValue, maxCachingDepth, isSilent, ...stateSlice } = action;
+    const { endpointKey, cacheKeyValue, isSilent, ...stateSlice } = action;
     if (isSilent) {
       /* eslint-disable no-param-reassign */
       state[endpointKey] = state[endpointKey] ?? {};
@@ -369,7 +374,7 @@ export namespace ApiHooksStore {
       Object.keys(stateSlice).forEach((stateSliceKey) => {
         state[endpointKey][cacheKeyValue][stateSliceKey] = stateSlice[stateSliceKey];
       });
-      state[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(endpointKey, state[endpointKey], maxCachingDepth);
+      state[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(endpointKey, state[endpointKey], stateSlice.maxCachingDepth);
       /* eslint-enable no-param-reassign */
       return state;
     }
@@ -384,7 +389,7 @@ export namespace ApiHooksStore {
       },
     };
     // make sure the dictionary of state slices for this endpoint hasn't exceeded the maximum depth
-    newState[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(endpointKey, newState[endpointKey], maxCachingDepth);
+    newState[endpointKey] = ApiHooksCaching.cleanEndpointDictionary(endpointKey, newState[endpointKey], stateSlice.maxCachingDepth);
     return newState;
   };
 

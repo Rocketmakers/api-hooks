@@ -4,6 +4,7 @@ import { ApiHooksEvents, ApiHooksResponders, ApiHooksStore } from "@rocketmakers
 import { HashRouter } from "react-router-dom"
 import { ArmstrongConfig, DialogProvider, ToastProvider } from "@rocketmakers/armstrong"
 import { Shell } from "./shell"
+import { userResponder } from "./state/responders/users"
 
 import "./logs"
 
@@ -29,7 +30,7 @@ class App extends React.Component {
       <ApiHooksStore.Provider>
         <ToastProvider>
           <DialogProvider>
-            <ApiHooksResponders.Provider>
+            <ApiHooksResponders.Provider responders={[userResponder]}>
               <HashRouter>
                 <Shell />
               </HashRouter>

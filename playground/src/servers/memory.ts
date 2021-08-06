@@ -41,6 +41,7 @@ export namespace MemoryServer {
   export function updateUser(id: string, data: Partial<Omit<IUser, "id">>): IUser {
     let user = getUser(id)
     user = { ...user, ...data }
+    users = users.map((u) => (u.id === id ? user : u))
     return user
   }
 
