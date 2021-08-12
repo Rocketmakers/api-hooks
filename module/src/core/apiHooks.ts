@@ -953,7 +953,7 @@ export namespace ApiHooks {
                 );
                 if (bookmarkPartial) {
                   const parsedHash = JSON.parse(storedStateSlice.paramHash);
-                  const previousValues = ApiHooksCaching.parseBookmarksIntoParamPartial(parsedHash, finalSettings.caching.bookmarkParameters);
+                  const previousValues = ApiHooksCaching.parseBookmarksIntoParamPartial(parsedHash, finalSettings.caching.bookmarkParameters, true);
                   if (previousValues) {
                     finalSettings.parameters = Objects.mergeDeep(finalSettings.parameters || {}, previousValues);
                     queryLog(['Loaded stored bookmark params', previousValues], finalSettings.debugKey);
