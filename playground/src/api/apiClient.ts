@@ -1,7 +1,7 @@
 import { MemoryServer } from "../servers/memory"
 import { delay } from "../utils/delay"
 
-const defaultDelay = 1000
+const defaultDelay = 200
 
 type AddTestArgs<TArgs = {}> = TArgs & {
   requestDelay?: number

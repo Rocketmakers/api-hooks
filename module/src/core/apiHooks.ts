@@ -6,6 +6,7 @@ import { ApiHooksGlobal } from './global';
 import { EndpointIDs } from './endpointIDs';
 import { Objects } from '../utils/objects';
 import { ApiHooksEvents } from './events';
+import { ApiHooksResponders } from './responders';
 
 /**
  * API Hooks
@@ -24,7 +25,7 @@ export namespace ApiHooks {
   type AnyFunction = (param: any) => any;
 
   /** general utility type - gets the type of a promise result from a promise */
-  type PromiseResult<TPromise> = TPromise extends Promise<infer TResult> ? TResult : never;
+  export type PromiseResult<TPromise> = TPromise extends Promise<infer TResult> ? TResult : never;
 
   /** general utility type - gets the type of the first parameter in a function */
   export type FirstParamOf<TFunc extends AnyFunction> = Parameters<TFunc>[0];
@@ -370,7 +371,7 @@ export namespace ApiHooks {
      */
     cacheKey?: CacheKey<TParam>;
     /**
-     * (optional) Will hold any invocation until the parameter designated as the cacheKey has a non "falsey" value.
+     * (optional) Will hold any invocation until the parameter designated as the cacheKey has a non "falsy" value.
      */
     holdInvokeForCacheKeyParam: boolean;
     /**
@@ -736,6 +737,7 @@ export namespace ApiHooks {
                 status: 'loaded',
                 timestamp: applicationStartedTimestamp,
                 shouldRefetchData: undefined,
+                maxCachingDepth: settingsFromHook.maxCachingDepth,
               };
             }
             // check for "initialData" passed to hook, and use that on first render
@@ -747,6 +749,7 @@ export namespace ApiHooks {
                 status: 'loaded',
                 timestamp: applicationStartedTimestamp,
                 shouldRefetchData: undefined,
+                maxCachingDepth: settingsFromHook.maxCachingDepth,
               };
             }
             return currentStoredStateSlice;
@@ -766,6 +769,7 @@ export namespace ApiHooks {
                   cacheKey,
                   storedStateSlice.data,
                   settingsFromHook?.maxCachingDepth,
+                  undefined,
                   true
                 )
               );
@@ -909,6 +913,13 @@ export namespace ApiHooks {
                 // set the request as finished fetching in the live fetching log so that future requests won't be aborted.
                 ApiHooksGlobal.setFetching(endpointHash, finalCacheKey, false);
                 fetchSettings.onFetchComplete?.(value, error, fetchSettings);
+                // run responder listeners
+                ApiHooksResponders.registeredQueryListeners
+                  .filter((rl) => rl.endpointHash === endpointHash)
+                  .forEach((rl) => {
+                    queryLog(['Executing query responder listener'], fetchSettings.debugKey);
+                    rl.callback({ data: value, error, cacheKey: finalCacheKey, params: fetchSettings.parameters, settings: fetchSettings });
+                  });
               }
             },
             [dispatch, setCacheKey, storedStateSlice, testKeys]
@@ -1218,6 +1229,7 @@ export namespace ApiHooks {
                 mutationLog([`Fetch successful`, { finalSettings, response: value }], finalSettings.debugKey);
                 ApiHooksEvents.onFetchSuccess.executeEventHooks(endpointHash, finalSettings.parameters, 'mutation', value);
                 finalSettings.onFetchSuccess?.(value, finalSettings);
+
                 // handle any refetch queries that were passed in.
                 if (finalSettings.refetchQueries) {
                   refetchQueries(finalSettings.refetchQueries);
@@ -1231,6 +1243,13 @@ export namespace ApiHooks {
                 finalSettings.onFetchError?.(error, finalSettings);
               } finally {
                 finalSettings.onFetchComplete?.(value, error, finalSettings);
+                // run responder callbacks
+                ApiHooksResponders.registeredMutationListeners
+                  .filter((rl) => rl.endpointHash === endpointHash)
+                  .forEach((rl) => {
+                    mutationLog(['Executing mutation responder listener'], finalSettings.debugKey);
+                    rl.callback({ data: value, error, params: finalSettings.parameters, settings: finalSettings });
+                  });
               }
               // return the data, errors will be thrown for mutations and should be handled by the consuming component unless `throwErrors` is explicitly set to false in settings.
               if (error && finalSettings.throwErrors) {
@@ -1328,6 +1347,13 @@ export namespace ApiHooks {
                 finalSettings.onFetchError?.(error, finalSettings);
               } finally {
                 finalSettings.onFetchComplete?.(value, error, finalSettings);
+                // run responder callbacks
+                ApiHooksResponders.registeredRequestListeners
+                  .filter((rl) => rl.endpointHash === endpointHash)
+                  .forEach((rl) => {
+                    requestLog(['Executing request responder listener'], finalSettings.debugKey);
+                    rl.callback({ data: value, error, params: finalSettings.parameters, settings: finalSettings });
+                  });
               }
               // return the data, errors will be thrown for requests and should be handled by the consuming components.
               if (error) {

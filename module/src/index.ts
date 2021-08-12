@@ -8,3 +8,4 @@ export { EndpointIDs } from './core/endpointIDs';
 export { ApiHooksGlobal } from './core/global';
 export { ApiHooksStore } from './core/store';
 export { ApiHooksEvents } from './core/events';
+export { ApiHooksResponders } from './core/responders';

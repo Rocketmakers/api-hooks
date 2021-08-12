@@ -12,6 +12,7 @@ export const UserEdit: React.FC = () => {
 
   const [addUser, { isFetching: adding }] = apiHooks.user.addUser.useMutation()
   const [updateUser, { isFetching: updating }] = apiHooks.user.updateUser.useMutation()
+  const [deleteUser, { isFetching: deleting }] = apiHooks.user.deleteUser.useMutation()
 
   const { bind, DataForm, dataBinder } = useForm<typeof data>(
     data ?? {
@@ -37,6 +38,10 @@ export const UserEdit: React.FC = () => {
     }
   }, [dataBinder, addUser, updateUser, userId])
 
+  const onDeleteClick = React.useCallback(async () => {
+    await deleteUser({ id: userId })
+  }, [deleteUser])
+
   const mutating = adding || updating
 
   return (
@@ -47,6 +52,12 @@ export const UserEdit: React.FC = () => {
       <Button pending={mutating} onClick={onSubmitClick}>
         Submit
       </Button>
+      {
+        !!userId &&
+        <Button pending={deleting} onClick={onDeleteClick}>
+          Delete
+        </Button>
+      }
     </DataForm>
   )
 }
