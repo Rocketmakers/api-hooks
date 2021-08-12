@@ -942,8 +942,11 @@ export namespace ApiHooks {
               // read force network setting, from query setting first, then fetch settings if present.
               const forceNetwork = fetchSettings?.forceNetwork;
 
+              // is cache stale or absent?
+              const cacheIsStaleOrAbsent = !isCacheValid;
+
               // check for bookmark parameters, and read the stored value if appropriate
-              if (finalSettings.caching?.bookmarkParameters && valueToReturn?.data && storedStateSlice?.paramHash) {
+              if (finalSettings.caching?.bookmarkParameters && valueToReturn?.data && storedStateSlice?.paramHash && !cacheIsStaleOrAbsent) {
                 const bookmarkPartial = ApiHooksCaching.parseBookmarksIntoParamPartial(
                   finalSettings.parameters,
                   finalSettings.caching.bookmarkParameters
@@ -967,11 +970,8 @@ export namespace ApiHooks {
 
               // create a set of booleans containing information about the current state of the request/caching.
               const inErrorState = !!storedStateSlice?.error;
-              const cacheIsStaleOrAbsent = !isCacheValid;
               const alreadyFetching = !!valueToReturn?.isFetching;
-              const paramsAreDifferent = !finalSettings.invokeOnParamChange
-                ? false
-                : !!storedStateSlice && storedStateSlice.paramHash !== newParamHash;
+              const paramsAreDifferent = !!finalSettings.invokeOnParamChange && !!storedStateSlice && storedStateSlice.paramHash !== newParamHash;
               const refetchTriggerSet = !!storedStateSlice?.shouldRefetchData;
 
               // The logic which dictates whether to invoke a request, or whether we can use what we already have in cache.
