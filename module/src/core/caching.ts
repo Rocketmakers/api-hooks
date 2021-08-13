@@ -188,25 +188,16 @@ export namespace ApiHooksCaching {
    * Converts the bookmark params property into a partial param object containing the passed values.
    * @param params The params to retrieve values from.
    * @param bookmarks The bookmark params object
-   * @param excludeFalsy Don't add bookmark values to the partial if they are falsy
    * @returns A partial param object or undefined if no bookmark values.
    */
-  export function parseBookmarksIntoParamPartial<TParam>(
-    params?: TParam,
-    bookmarks?: BookmarkParams<TParam>,
-    excludeFalsy = false
-  ): Partial<TParam> | undefined {
+  export function parseBookmarksIntoParamPartial<TParam>(params?: TParam, bookmarks?: BookmarkParams<TParam>): Partial<TParam> {
     if (!params || !bookmarks) {
-      return undefined;
+      return {};
     }
     if (typeof bookmarks === 'function') {
-      return bookmarks(params);
+      return bookmarks(params) ?? {};
     }
-    let bookmarksToReturn = [...bookmarks];
-    if (excludeFalsy) {
-      bookmarksToReturn = bookmarksToReturn.filter((b) => !!params[b]);
-    }
-    return bookmarksToReturn.reduce((compiledParams, bookmark) => ({ ...compiledParams, [bookmark]: params[bookmark] }), {});
+    return bookmarks.filter((b) => !!params[b]).reduce((compiledParams, bookmark) => ({ ...compiledParams, [bookmark]: params[bookmark] }), {});
   }
 
   /**

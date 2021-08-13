@@ -947,18 +947,25 @@ export namespace ApiHooks {
 
               // check for bookmark parameters, and read the stored value if appropriate
               if (finalSettings.caching?.bookmarkParameters && valueToReturn?.data && storedStateSlice?.paramHash && !cacheIsStaleOrAbsent) {
+                // get current values for incoming bookmark parameters, stripping out falsy values
                 const bookmarkPartial = ApiHooksCaching.parseBookmarksIntoParamPartial(
                   finalSettings.parameters,
                   finalSettings.caching.bookmarkParameters
                 );
-                if (bookmarkPartial) {
-                  const parsedHash = JSON.parse(storedStateSlice.paramHash);
-                  const previousValues = ApiHooksCaching.parseBookmarksIntoParamPartial(parsedHash, finalSettings.caching.bookmarkParameters, true);
-                  if (previousValues) {
-                    finalSettings.parameters = Objects.mergeDeep(finalSettings.parameters || {}, previousValues);
-                    queryLog(['Loaded stored bookmark params', previousValues], finalSettings.debugKey);
-                  }
-                }
+
+                // get previous values for incoming bookmarks
+                const parsedHash = JSON.parse(storedStateSlice.paramHash);
+                const previousValues = ApiHooksCaching.parseBookmarksIntoParamPartial(parsedHash, finalSettings.caching.bookmarkParameters);
+
+                // Spread previous values first, and then incoming values where not falsy, to make sure incoming value wins where defined, but previous value wins where undefined.
+                finalSettings.parameters = Objects.mergeDeep(finalSettings.parameters || {}, previousValues, bookmarkPartial);
+                queryLog(
+                  [
+                    'Loaded stored bookmark params where incoming param is undefined',
+                    { incomingBookmarks: bookmarkPartial, storedBookmarks: previousValues },
+                  ],
+                  finalSettings.debugKey
+                );
               }
 
               if (forceExclusiveParams && param) {
