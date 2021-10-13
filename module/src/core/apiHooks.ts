@@ -696,7 +696,13 @@ export namespace ApiHooks {
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
           const settingsFromHook = React.useMemo<UseQueryConfigSettings<any, any>>(() => {
             return Objects.mergeDeep(combinedQuerySettings, executionSettings) as UseQueryConfigSettings<any, any>;
-          }, [JSON.stringify(executionSettings)]);
+          }, [
+            JSON.stringify(executionSettings),
+            executionSettings?.onFetchComplete,
+            executionSettings?.onFetchError,
+            executionSettings?.onFetchStart,
+            executionSettings?.onFetchSuccess,
+          ]);
 
           // cache key - retrieve any cache key value if one exists in the settings
           const cacheKeyValueFromHook = React.useMemo(() => {
@@ -1170,7 +1176,13 @@ export namespace ApiHooks {
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
           const settingsFromHook = React.useMemo<UseMutationSettings<any, any>>(() => {
             return Objects.mergeDeep(combinedMutationSettings, executionSettings) as UseMutationSettings<any, any>;
-          }, [JSON.stringify(executionSettings)]);
+          }, [
+            JSON.stringify(executionSettings),
+            executionSettings?.onFetchComplete,
+            executionSettings?.onFetchError,
+            executionSettings?.onFetchStart,
+            executionSettings?.onFetchSuccess,
+          ]);
 
           // the method used to dispatch refetch actions - these trigger the "refetch query" behaviour.
           const refetchQueries = React.useCallback<UseMutationResponse<any, any, any>[2]>(
@@ -1311,7 +1323,13 @@ export namespace ApiHooks {
             const settings = { ...combinedRequestSettings, ...executionSettings };
             settings.parameters = { ...combinedMutationSettings.parameters, ...(executionSettings.parameters ?? {}) };
             return settings;
-          }, [JSON.stringify(executionSettings)]);
+          }, [
+            JSON.stringify(executionSettings),
+            executionSettings?.onFetchComplete,
+            executionSettings?.onFetchError,
+            executionSettings?.onFetchStart,
+            executionSettings?.onFetchSuccess,
+          ]);
 
           // get any test keys
           const [, , testKeys] = React.useContext(ApiHooksStore.Context);
