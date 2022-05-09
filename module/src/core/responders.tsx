@@ -223,7 +223,7 @@ export namespace ApiHooksResponders {
    * NOTE: this must be used INSIDE an APIHooks store provider.
    * FURTHER NOTE: armstrong users - please add this component INSIDE armstrong, (the APIHooks store provider should always be OUTSIDE armstrong)
    * */
-  export const Provider: React.FC<IProviderProps> = ({ children, responders }) => {
+  export const Provider: React.FC<React.PropsWithChildren<IProviderProps>> = ({ children, responders }) => {
     const [state, dispatch] = React.useContext(ApiHooksStore.Context);
     responders.forEach((responderHook) => responderHook(state, dispatch));
     return <>{children}</>;

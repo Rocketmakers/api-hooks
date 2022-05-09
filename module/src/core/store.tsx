@@ -409,7 +409,7 @@ export namespace ApiHooksStore {
    * - Must be imported and wrapped around the entire app
    * - Enables re-renders downstream when state changes
    */
-  export const Provider: React.FC<ProviderProps> = ({ children, testKeys }) => {
+  export const Provider: React.FC<React.PropsWithChildren<ProviderProps>> = ({ children, testKeys }) => {
     /**
      * Execute the "onBeforeInitialState" event hooks and retrieve some potential state to use
      */
