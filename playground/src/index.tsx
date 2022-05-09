@@ -1,16 +1,14 @@
 import * as React from "react"
-import * as ReactDOM from "react-dom"
+import { createRoot } from "react-dom/client"
 import { ApiHooksEvents, ApiHooksResponders, ApiHooksStore } from "@rocketmakers/api-hooks"
 import { HashRouter } from "react-router-dom"
-import { ArmstrongConfig, DialogProvider, ToastProvider } from "@rocketmakers/armstrong"
+import { ToastProvider, ModalProvider } from "@rocketmakers/armstrong-edge"
 import { Shell } from "./shell"
 import { userResponder } from "./state/responders/users"
 
 import "./logs"
 
 import "./theme/theme.scss"
-
-ArmstrongConfig.setLocale("en-gb")
 
 // ApiHooksEvents.onBeforeInitialState.addEventHook(() => {
 //   return JSON.parse(localStorage.getItem("my-data-store") ?? "{}")
@@ -20,6 +18,9 @@ ArmstrongConfig.setLocale("en-gb")
 //   localStorage.setItem("my-data-store", JSON.stringify(state))
 // })
 
+// Hack to get around lack of React 18 support in Armstrong Edge
+const ToastProviderFixed = ToastProvider as any
+
 class App extends React.Component {
   componentDidCatch() {
     console.error("TODO - handle error")
@@ -28,18 +29,30 @@ class App extends React.Component {
   render() {
     return (
       <ApiHooksStore.Provider>
-        <ToastProvider>
-          <DialogProvider>
+        <ToastProviderFixed>
+          <ModalProvider>
             <ApiHooksResponders.Provider responders={[userResponder]}>
               <HashRouter>
                 <Shell />
               </HashRouter>
             </ApiHooksResponders.Provider>
-          </DialogProvider>
-        </ToastProvider>
+          </ModalProvider>
+        </ToastProviderFixed>
       </ApiHooksStore.Provider>
     )
   }
 }
 
-ReactDOM.render(<App />, document.getElementById("host"))
+function render() {
+  const rootElementId = "root"
+  const container = document.getElementById(rootElementId)
+  if (!container) {
+    throw new Error(`Root element ${rootElementId} not found in page`)
+  }
+  const root = createRoot(container)
+  root.render(
+    <App />
+  )
+}
+
+render()

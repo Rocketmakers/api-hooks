@@ -1,19 +1,26 @@
 {
   "name": "@rocketmakers/api-hooks",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "description": "Rocketmakers front-end library for parsing a generated Typescript API client into a set of configurable React hooks for fetching and mutating data.",
   "main": "./dist/index.js",
+  "module": "./dist/esm/index.js",
   "typings": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "copy-readme": "shx cp ../README.md .",
-    "build-ts": "tsc --pretty --extendedDiagnostics -p src -d",
+    "build-cjs": "tsc --pretty --extendedDiagnostics -p src/tsconfig-cjs.json -d",
+    "build-esm": "tsc --pretty --extendedDiagnostics -p src/tsconfig-esm.json -d",
+    "build-ts": "npm run build-cjs && npm run build-esm",
     "build": "npm run build-ts && npm run copy-readme",
     "link": "npm link",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --max-warnings=0 \"**/*.ts{,?}\" --cache --ignore-path .eslintignore --ext ts --ext tsx",
     "lint-fix": "npm run lint -- --fix",
     "prepublishOnly": "npm run lint && npm run build",
-    "publish": "npm publish"
+    "postinstall": "npm run build && npm link",
+    "publish": "npm publish",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "publishConfig": {
     "access": "public"
@@ -34,28 +41,25 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1"
+    "react": "17.x || 18.x"
   },
   "devDependencies": {
-    "@types/react": "^17.0.0",
-    "@types/react-dom": "^17.0.0",
-    "@typescript-eslint/eslint-plugin": "^4.14.0",
-    "@typescript-eslint/parser": "^4.14.0",
-    "eslint": "^7.18.0",
-    "eslint-config-airbnb-typescript": "^12.0.0",
-    "eslint-config-prettier": "^7.2.0",
-    "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jsx-a11y": "^6.4.1",
-    "eslint-plugin-no-only-tests": "^2.4.0",
-    "eslint-plugin-prettier": "^3.3.1",
-    "eslint-plugin-react": "^7.22.0",
-    "eslint-plugin-react-hooks": "^4.2.0",
-    "prettier": "^2.2.1",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "shx": "^0.3.3",
-    "tslib": "^2.1.0",
-    "typescript": "^4.1.3"
+    "@types/react": "^18.0.9",
+    "@types/react-dom": "^18.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.22.0",
+    "@typescript-eslint/parser": "^5.22.0",
+    "eslint": "^8.15.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-no-only-tests": "^2.6.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.29.4",
+    "eslint-plugin-react-hooks": "^4.5.0",
+    "prettier": "^2.6.2",
+    "shx": "^0.3.4",
+    "tslib": "^2.4.0",
+    "typescript": "^4.6.4"
   }
 }

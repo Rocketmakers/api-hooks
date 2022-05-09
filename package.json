@@ -1,6 +1,6 @@
 {
   "name": "api-hooks",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "description": "Rocketmakers front-end library for parsing a generated Typescript API client into a set of configurable React hooks for fetching and mutating data.",
   "main": "index.js",
   "directories": {
@@ -9,8 +9,7 @@
   "scripts": {
     "start": "(cd playground && npm start)",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "(cd module && npm i) && (cd playground && npm i) && npm run link-api-hooks",
-    "link-api-hooks": "(cd module && npm run build && npm run link) && (cd playground && npm run link-api-hooks)",
+    "postinstall": "(cd module && npm i) && (cd playground && npm i)",
     "check-versions": "ncu && (cd module && ncu) && (cd playground && ncu)",
     "upgrade-all": "ncu -u && (cd module && ncu -u) && (cd playground && ncu -u) && npm i"
   },
@@ -21,6 +20,6 @@
   "author": "developers@rocketmakers.com",
   "license": "MIT",
   "devDependencies": {
-    "npm-check-updates": "^10.2.5"
+    "npm-check-updates": "^12.5.11"
   }
 }

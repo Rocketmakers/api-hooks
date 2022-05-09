@@ -1204,7 +1204,7 @@ export namespace ApiHooks {
                       paramMode: query.paramOverrideMode ?? ('merge' as ApiHooksStore.RefetchParamOverrideMode),
                     };
                   }
-                } catch (error) {
+                } catch (error: any) {
                   throw new Error(`API Hooks Mutation Error, Endpoint: ${endpointHash} - ${error?.message ?? 'Refetch query failed'}`);
                 }
                 mutationLog([`Refetch query processed`, { query, finalCacheKeyValue }], settingsToUse.debugKey);

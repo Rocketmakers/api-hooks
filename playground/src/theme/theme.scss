@@ -1,13 +1,20 @@
+@use 'sass:math';
+
 // FONTS
 @import "./shared/fonts";
-@import "./shared/icomoon";
+@import '~@rocketmakers/armstrong-edge/dist/icomoon.scss';
 
-// ARMSTRONG LIBRARY IMPORT (don't move or delete!)
-@import "~@rocketmakers/armstrong/dist/imports";
-@import "~@rocketmakers/armstrong/dist/core";
-@import "~@rocketmakers/armstrong/dist/form";
-@import "~@rocketmakers/armstrong/dist/navigation";
-@import "~@rocketmakers/armstrong/dist/animation";
+// variables and mixins - required for the rest of armstrong to work
+@import '~@rocketmakers/armstrong-edge/dist/imports.scss';
+
+// includes a tonne of useful animations (required for use in the animated.scss theme)
+@import '~@rocketmakers/armstrong-edge/dist/animations.scss';
+
+// basic theme - includes only functional and layout styling
+@import '~@rocketmakers/armstrong-edge/dist/basic.scss';
+
+// prototyping theme - includes prototype theme styling
+@import '~@rocketmakers/armstrong-edge/dist/prototyping.scss';
 
 *,
 *:before,
