@@ -103,7 +103,7 @@ export namespace ApiHooksResponders {
   /**
    * the tools sent to a responder hook allowing it to interact with data and cache.
    */
-  interface ResponderParams<TApiClient = any> {
+  export interface ResponderParams<TApiClient = any> {
     /** a tool allowing fetches from APIHooks to be listened to within a responder hook */
     useListener: AccessorFactory<TApiClient>['useListener'];
     /** a tool allowing pieces of APIHooks cache to be set manually from a responder hook */
@@ -113,13 +113,13 @@ export namespace ApiHooksResponders {
   }
 
   /** type denoting a responder hook created by the factory to be passed into the provider */
-  type ResponderHook = (state: ApiHooksStore.State, dispatch?: React.Dispatch<ApiHooksStore.Actions.GenericAction>) => void;
+  export type ResponderHook = (state: ApiHooksStore.State, dispatch?: React.Dispatch<ApiHooksStore.Actions.GenericAction>) => void;
 
   /** type denoting an individual responder function defined by the consuming application */
-  type Responder<TApiClient = any> = (params: ResponderParams<TApiClient>) => void;
+  export type Responder<TApiClient = any> = (params: ResponderParams<TApiClient>) => void;
 
   /** type denoting a listener ready to be called by APIHooks */
-  interface RegisteredListener {
+  export interface RegisteredListener {
     /** the `controller.endpoint` hash of the endpoint in question */
     endpointHash: string;
     /** the function to call when the listener fires */
