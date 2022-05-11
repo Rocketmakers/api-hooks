@@ -121,7 +121,7 @@ export namespace ApiHooksCaching {
       if (directive === 'never') {
         return false;
       }
-      return stateSlice?.timestamp + directive < Date.now();
+      return (stateSlice?.timestamp ?? 0) + directive < Date.now();
     }
     return true;
   }

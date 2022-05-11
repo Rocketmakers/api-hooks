@@ -1302,10 +1302,10 @@ export namespace ApiHooks {
           }, [fetchStateResponse.data]);
 
           // compile the live response
-          const liveResponse = React.useMemo<UseMutationResponse<any, any, any>[1]>(() => ({ ...fetchStateResponse, processed }), [
-            fetchStateResponse,
-            processed,
-          ]);
+          const liveResponse = React.useMemo<UseMutationResponse<any, any, any>[1]>(
+            () => ({ ...fetchStateResponse, processed }),
+            [fetchStateResponse, processed]
+          );
 
           return [fetch, liveResponse, refetchQueries];
         },
