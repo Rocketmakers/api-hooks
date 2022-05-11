@@ -9,7 +9,7 @@ import { ApiHooksStore } from './store';
 /**
  * Class representing a store and get/set methods to manage a single event
  */
-class EventManager<TCallback extends (...params: any) => any> {
+class EventManager<TCallback extends (...params: any[]) => any> {
   /**
    * The in-memory store for callback functions relating to this event
    */

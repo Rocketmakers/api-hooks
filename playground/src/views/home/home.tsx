@@ -9,8 +9,6 @@ export const Home: React.FC = () => {
       data,
       processed: { validationErrors },
     },
-    ,
-    manual,
   ] = apiHooks.user.getUserList.useQuery()
 
   return (

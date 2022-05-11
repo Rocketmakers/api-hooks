@@ -1,8 +1,6 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
     "strict": true,
     "isolatedModules": false,
     "experimentalDecorators": true,
@@ -15,7 +13,6 @@
     "noLib": false,
     "preserveConstEnums": false,
     "suppressImplicitAnyIndexErrors": true,
-    "outDir": "../dist",
     "importHelpers": true,
     "moduleResolution": "node",
     "lib": ["es2016", "dom", "dom.iterable"]

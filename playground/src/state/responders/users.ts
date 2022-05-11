@@ -10,7 +10,7 @@ export const userResponder = responders.use(({ useListener, setCache, getCache }
       /** get the user list from cache */
       const listCache = getCache("user", "getUserList")
       /** is our updated user in the list? */
-      if (listCache?.some((user) => (user.id = data.id))) {
+      if (listCache?.some((user) => (user.id === data.id))) {
         /** create an updated user list containing the changes made to our individual user */
         const updatedList = listCache.map((user) => (user.id === data.id ? data : user))
         /** store our new list in cache - this will re-render any components displaying the list automatically! */
