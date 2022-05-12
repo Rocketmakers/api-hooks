@@ -1,6 +1,6 @@
 {
   "name": "@rocketmakers/api-hooks",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Rocketmakers front-end library for parsing a generated Typescript API client into a set of configurable React hooks for fetching and mutating data.",
   "main": "./dist/index.js",
   "module": "./dist/esm/index.js",
@@ -17,9 +17,7 @@
     "link": "npm link",
     "lint": "eslint --max-warnings=0 \"**/*.ts{,?}\" --cache --ignore-path .eslintignore --ext ts --ext tsx",
     "lint-fix": "npm run lint -- --fix",
-    "prepublishOnly": "npm run lint && npm run build",
-    "postinstall": "npm run build && npm link",
-    "publish": "npm publish",
+    "prepare": "npm run lint && npm run build && npm link",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "publishConfig": {

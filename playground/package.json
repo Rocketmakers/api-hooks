@@ -5,7 +5,7 @@
   "main": "./src/index.tsx",
   "scripts": {
     "start": "concurrently \"npm:type-check\" \"vite --host\" -n \"TYPE CHECK,VITE\"",
-    "postinstall": "npm run link-api-hooks",
+    "prepare": "npm run link-api-hooks",
     "link-api-hooks": "npm link @rocketmakers/api-hooks",
     "type-check": "tsc -p ./tsconfig.json --noEmit --watch --preserveWatchOutput"
   },
