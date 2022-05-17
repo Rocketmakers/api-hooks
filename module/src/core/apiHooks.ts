@@ -762,6 +762,15 @@ export namespace ApiHooks {
           }, [state[endpointHash], cacheKey, settingsFromHook]);
 
           /**
+           * Effect to handle the cache key changing without a re-mount.
+           * - Essentially forces a virtual re-mount with the new state slice
+           */
+          React.useLayoutEffect(() => {
+            isFirstRender.current = true;
+            setCacheKey(cacheKeyValueFromHook);
+          }, [cacheKeyValueFromHook]);
+
+          /**
            * Effect to set default data to state
            */
           React.useLayoutEffect(() => {
@@ -1062,13 +1071,12 @@ export namespace ApiHooks {
                 invoke();
               }
             }
-          }, [!!settingsFromHook.autoInvoke]);
+          }, [!!settingsFromHook.autoInvoke, cacheKey]);
 
           // called when the params passed into the hook CHANGE, but NOT on first run - sets the new params/cache key and fetches data if the settings allow.
           React.useEffect(() => {
             if (!isFirstRender.current) {
               queryLog(['Parameters changed', { oldParams: storedStateSlice?.paramHash, newParams: paramHashFromHook }], settingsFromHook.debugKey);
-              setCacheKey(ApiHooksCaching.parseCacheKey(settingsFromHook.parameters, settingsFromHook.cacheKey));
               if (settingsFromHook.invokeOnParamChange) {
                 if (
                   settingsFromHook.holdInvokeForCacheKeyParam &&
@@ -1115,7 +1123,7 @@ export namespace ApiHooks {
           // mark the end of the first render - must come last
           React.useEffect(() => {
             isFirstRender.current = false;
-          }, []);
+          }, [cacheKey]);
 
           /** PROCESSING HOOK */
 
