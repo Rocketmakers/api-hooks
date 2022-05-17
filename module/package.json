@@ -9,7 +9,7 @@
     "dist/"
   ],
   "scripts": {
-    "copy-readme": "shx cp ../README.md .",
+    "copy-readme": "shx cp ../README.md . && shx cp -R ../docs ./docs",
     "build-cjs": "tsc --pretty --extendedDiagnostics -p src/tsconfig-cjs.json -d",
     "build-esm": "tsc --pretty --extendedDiagnostics -p src/tsconfig-esm.json -d",
     "build-ts": "npm run build-cjs && npm run build-esm",
