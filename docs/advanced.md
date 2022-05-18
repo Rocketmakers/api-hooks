@@ -4,144 +4,59 @@ Here are some of the more advanced API Hooks features. These features allow you 
 
 These features won't be necessary for all applications, but those that handle a lot of data may well find them useful.
 
-### Refetch Queries
+### The Processing Hook
 
-Because the results of [useQuery](hooks.md#usequery) are cached, it's often necessary to make sure cached data doesn't hang around once we _know_ it's been changed, like after a [useMutation](hooks.md#usemutation) for example. API Hooks has a dedicated solution for managing this called `refetchQueries`.
+Most applications have elements of response processing that occur off the back of every (or nearly every) API request. The most obvious example is error handling.
 
-Here are some examples:
+API Hooks provides the opportunity to define a "processing hook" which will be injected into each of the three request hooks ([useQuery](hooks.md#usequery), [useMutation](hooks.md#usemutation) & [useRequest](hooks.md#userequest)).
 
-#### Endpoint level refetch - "Whenever I create/update a user, I want to make sure my user cache is up to date"
+The below code snippet shows how a central response processing hook can be used to show a "toast" notification when a server error occurs, and process any validation errors:
 
+```TypeScript
+interface ProcessingResponse {
+  validationErrors: { key: string; message: string }[]
+}
+
+export const processingHook: ApiHooks.ProcessingHook<ProcessingResponse> = ({ hookType, fetchingMode, data, error, settings }) => {
+  // toast
+  const dispatch = useDispatchToast()
+
+  // validation errors
+  const validationErrors = React.useMemo<ProcessingResponse["validationErrors"]>(() => {
+    if (hookType === "mutation" && data?.error?.status === 422) {
+      return data.error.payload ?? []
+    }
+    return []
+  }, [data, hookType])
+
+  // server errors
+  React.useEffect(() => {
+    if (data?.error?.status === 500) {
+      dispatch({ type: "error", content: data.error.payload ?? "Unexpected Error" })
+    }
+  }, [dispatch, data])
+
+  return { validationErrors }
+}
+```
+
+Once defined, applying this processing hook to your API Hooks instance is as simple as adding it to the central library configuration:
 ```TypeScript
 import { ApiHooks } from "@rocketmakers/api-hooks"
-import { apiClient } from "*API CLient location*"
+import { processingHook } from "*Processing hook location.*"
 
-// this factory function can be in a different file for readability
-const myEndpointConfig: ApiHooks.HookConfigLibraryFactory<typeof apiClient> = (emptyConfig) => {
-  const endpointSettings = { ...emptyConfig }
-
-  endpointSettings.exampleQueries.getUser.query = {
-    cacheKey: "id",
-  }
-
-  endpointSettings.exampleMutations.updateUser.mutation = {
-    refetchQueries: [
-      endpointIds.exampleQueries.getUser({ cacheKeyFromMutationParam: "id" }),
-      endpointIds.exampleQueries.getUserList()
-    ],
-  }
-
-    endpointSettings.exampleMutations.addUser.mutation = {
-    refetchQueries: [
-      endpointIds.exampleQueries.getUserList()
-    ],
-  }
-
-  return endpointSettings
-}
-
-const apiHooks = ApiHooks.create(apiClient, {
-  // pass your factory to the hookConfigFactory property
-  hookConfigFactory: myEndpointConfig
-})
+export const apiHooks = ApiHooks.create(apiClient, {
+  processingHook
+});
 ```
 
-Let's unpack what's happening here:
-
-1. Whenever `updateUser` successfully runs from a [useMutation](hooks.md#usemutation) hook, all cache associated with the `getUserList` query will be invalidated, and so will all cache stored by `getUser` with a `cacheKey` that matches the `id` parameter sent to the `updateUser` mutation. To explain this further, if user `24` is updated for example, then all cache associated with user `24` will be invalidated, but cache stored by `getUser` relating to other user IDs will remain unaffected.
-2. Whenever `addUser` successfully runs from a [useMutation](hooks.md#usemutation) hook, all cache associated with the `getUserList` will be invalidated.
-
-NOTE:
-
-- What does it mean when we say cache is "invalidated"? If there is a component rendered with a [useQuery](hooks.md#usequery) referencing the invalidated cache, then a new request for the data will fire immediately once the associated mutation is successful. If there is _not_ a component rendered with a [useQuery](hooks.md#usequery) referencing the invalidated cache, then any stored cache will simply be marked as invalid so that a new request will be fired in the event that a [useQuery](hooks.md#usequery) is mounted that references it.
-- The config in the above example is defined at "endpoint level", meaning that these behaviors will apply to all associated hooks throughout the application. This is the recommended approach for `cacheKey` and `refetchQuery` config, because it means we don't need to remember to add these settings in every component which references this data. If need be though, all of this config can also be passed at "hook level."
-- As well as `cacheKeyFromMutationParam`, a refetch query can also be defined with a `cacheKeyValue` property containing a hard value for the `cacheKey` to invalidate, this is more commonly used at "hook level" rather than endpoint level.
-- If your `cacheKeyFromMutationParam` is inside an object being passed to the mutation, rather than a top level parameter, a function can also be passed to retrieve it, just like a normal `cacheKey`, for example:
-
+NOTE: Anything returned from the processing hook will be sent to the `processed` property of every API request hook that you use. This property will be strictly typed to be the same shape as your processing hook response:
 ```TypeScript
-endpointSettings.exampleMutations.updateUser.mutation = {
-  refetchQueries: [
-    endpointIds.exampleQueries.getUser({ cacheKeyFromMutationParam: data => data.user.id }),
-    endpointIds.exampleQueries.getUserList()
-  ],
-}
+const [addUser, { isFetching, processed }] = apiHooks.user.addUser.useMutation();
+
+const validationErrors = processed?.validationErrors
 ```
 
-#### Defining refetch queries by factory function
-
-To allow for more flexibility, the array of refetch queries can be returned from a factory function, allowing the list of requests to be dependent on the settings sent to the mutation.
-
-In this example, the `id` property of our `updateUser` mutation is optional, and we only want to refetch the `getUser` query state **if** an `id` was passed to the mutation:
-
-```TypeScript
-endpointMap.user.updateUser.mutation = {
-  refetchQueries: (settings) => {
-    if (settings.parameters?.id) {
-      return [endpointIdentifiers.user.getUser({ cacheKeyValue: settings.parameters.id })]
-    }
-    return []
-  },
-}
-```
-
-#### Refetch query context
-
-Depending on the design of the API, it's sometimes the case that a query cache key needs more information than the contents of the mutation hook settings can provide. In these unusual cases, we can supply context from the hook that the refetch query can use to form a cache key.
-
-In this example, the `getUser` endpoint requires a `categoryId` as well as the user's `id` in order to build the cache key for the query that needs to be re-fetched. The `categoryId` is not sent to the mutation, so we'll need to read it from context:
-```TypeScript
-endpointMap.user.updateUser.mutation = {
-  refetchQueries: (settings) => {
-    if (settings.parameters?.id && settings.refetchQueryContext?.categoryId) {
-      return [endpointIdentifiers.user.getUser({ cacheKeyValue: `${settings.parameters.id}-${settings.refetchQueryContext.categoryId}` })]
-    }
-    return []
-  },
-}
-```
-In order for this to work, **all** components using this mutation will need to supply the necessary context, or the re-fetch will not execute. In this example, the `categoryId` is passed to the component as a prop, but it could come from anywhere:
-```TypeScript
-export const UserEdit: React.FC<{ categoryId: string }> = ({ categoryId }) => {
-
-  const [updateUser, { isFetching: updating }] = apiHooks.user.updateUser.useMutation({
-    refetchQueryContext: { categoryId }
-  })
-```
-
-#### Advanced refetch query management
-
-By default, an on-screen query that has been asked to perform a refetch will do so using the last parameters that were sent to it. If, however, you want to intercept that functionality, you can send some query params yourself.
-
-This is particularly useful with paged queries, maybe the last request was for page `3` for example, and you want to ensure that the refetch request is for page `1`. For example:
-
-```TypeScript
-endpointSettings.exampleMutations.updateUser.mutation = {
-  refetchQueries: [
-    endpointIds.exampleQueries.getUser({ cacheKeyFromMutationParam: data => data.user.id }),
-    endpointIds.exampleQueries.getUserList({
-      paramOverride: { page: 1 },
-      paramOverrideMode: 'merge'
-    })
-  ],
-}
-```
-The `paramOverrideMode` can be `merge` or `replace` and will dictate whether the `paramOverride` params merge with the last params used, or replace them entirely, when performing the refetch.
-
-Refetch queries can also be compiled dynamically based on the settings passed to the mutation, do this by passing a function instead of an array, the function will receive the settings as a parameter. For example:
-
-```TypeScript
-endpointMap.user.updateUser.mutation = {
-  refetchQueries: (settings) => {
-    const queries = [endpointIdentifiers.user.getUserList()]
-    if (settings.parameters?.id) {
-      queries.push(endpointIdentifiers.user.getUser({ cacheKeyValue: settings.parameters?.id }))
-    }
-    return [endpointIdentifiers.user.getUserList()]
-  },
-}
-```
-
-This example will perform an extra refetch if an optional param is passed.
 ---
 
 ### Lifecycle Listeners
@@ -155,6 +70,32 @@ All three of the API request hooks ([useQuery](hooks.md#usequery), [useMutation]
 
 NOTE: Functions can be passed to these listeners at any config level (`application`, `endpoint` or `hook`), but be aware that if the same listener is used on the same endpoint at multiple config levels, **only the lowest level function will be executed** as the level settings override each other.
 
+---
+
+### Global Listeners
+
+API Hooks global listeners allows functions to be defined which hook into the API Hooks lifecycle for **all** hook instances at a global level. This can be particularly useful for reading/writing cache to an external source.
+
+For example, the below code snippet will read the entire API Hooks cache state from a local storage container, and write to that same container when state changes occur:
+```TypeScript
+ApiHooksEvents.onBeforeInitialState.addEventHook(() => {
+  return JSON.parse(localStorage.getItem("my-data-store") ?? "{}")
+})
+
+ApiHooksEvents.onStateUpdated.addEventHook((state) => {
+  localStorage.setItem("my-data-store", JSON.stringify(state))
+})
+```
+
+Here's a list of all global events that can be hooked into, some of these are similar to the hook level [lifecycle listeners](#lifecycle-listeners):
+- `onBeforeInitialState` - called just before the initial render, receives any test keys that have been defined and **must return an object to be used as the initial state!**
+- `onStateUpdated` - called every time a state change is made, receives the new state and any test keys that have been defined.
+- `onFetchStart` - called immediately **before** a request is made to the API, it receives the `controller.endpoint` endpoint ID, any parameters sent to the request, and the hook type used (`query`, `mutation` or `request`)
+- `onFetchSuccess` - called immediately **after** a **successful** response has returned from the API, it receives the `controller.endpoint` endpoint ID, any parameters sent to the request, and the hook type used (`query`, `mutation` or `request`), and the response from the API.
+- `onFetchError` - called immediately **after** a **failed** response has returned from the API, it receives the `controller.endpoint` endpoint ID, any parameters sent to the request, and the hook type used (`query`, `mutation` or `request`), and the error from the API.
+
+---
+
 ### Responders
 
 A responder is a hook that exists once at a global level, it receives a set of methods designed to allow advanced state management at a global level. A responder is a powerful tool that can be used for a variety of functions, but it's primarily designed to:
@@ -165,7 +106,7 @@ A responder is a hook that exists once at a global level, it receives a set of m
 #### For example:
 
 - Our application has an infinitely paged list of users returned as an array of user objects from a `getUsers` query.
-- We also have a `getUser` query which receives an identical user object, but for a single `id`, it uses this `id` as it's cache key.
+- We also have a `getUser` query which receives an identical user object, but for a single `id`, it uses this `id` as its cache key.
 - Finally, we have an `updateUser` mutation which receives an updated user object and changes the data on the server.
 
 We've set up a refetch query so that the `getUser` cache for a single user is re-fetched from the server when our `updateUser` has completed successfully, great! 🎉 But what about the user data for the updated user in our `getUserList` cache??..
@@ -249,6 +190,8 @@ class App extends React.Component {
 ```
 NOTE: You'll notice that the `ApiHooksResponders.Provider` is _inside_ the standard `ApiHooksStore.Provider`. This is to allow your responders to use the standard library hooks if necessary, as well as their unique toolkit because remember, responders are just more hooks!
 
+---
+
 ### Default Data
 
 Sometimes it's useful to supply a [useQuery](hooks.md#usequery) hook with data to show on the first render of the app, before any requests are made to the server. This is particularly useful for isomorphic applications that are rendered synchronously on the server using data that has already been retrieved.
@@ -259,7 +202,7 @@ Default data can be supplied via a factory function, in a very similar way to [e
 
 ```TypeScript
 import { ApiHooks } from "@rocketmakers/api-hooks"
-import { apiClient } from "*API CLient location*"
+import { apiClient } from "path/to/my/apiclient"
 
 // this factory function can be in a different file for readability
 export const defaultDataFactory: ApiHooks.DefaultDataLibraryFactory<typeof apiClient> = (emptyData) => {
@@ -288,5 +231,39 @@ const apiHooks = ApiHooks.create(apiClient, {
 #### Activating default data
 
 Telling API Hooks to use default data is achieved in an identical way to activating [mock endpoints](#testing-with-mock-endpoints), via a setting in query config called `useDefaultData`. This can be set at application, endpoint or hook level, depending on your needs.
+
+---
+
+### Payload Modifiers
+
+On rare occasions, you may want to change the way data is stored by API Hooks, which can be achieved using a payload modifier as long as **the shape of the data doesn't change**
+
+Infinite paging is the most common example of this being useful. The below code snippet will spread the incoming user list state into the existing list of users whilst avoiding duplication. This means the state will grow as requests are made rather than be replaced:
+```TypeScript
+  endpointMap.user.getUserList.query = {
+    payloadModifier: (prevData, newData, prevParams, newParams) => {
+      return [...prevData, ...newData.filter(d => !prevData.some(pd => pd.id === d.id))]
+    }
+  }
+```
+
+NOTE:
+- This example is overly simplistic and probably dangerous, you'd likely need to read the paging parameters from `prevParams` and `newParams` to make sure your state is managed correctly based on the page requested and how it relates to the previous page requested.
+- The above example has been added at [endpoint level](../docs/config.md#endpoint-level-settings), but it could have been defined at a different config level.
+
+### Bookmark Parameters
+
+Before attempting to use this feature, it's important to first have an overall understanding of API Hooks [caching](caching.md), especially the section on [config](caching.md#cache-config---optimizing-the-state).
+
+On extremely rare occasions it's useful to specify an endpoint parameter as a "bookmark". Bookmark parameters work exactly like normal parameters, except when `undefined` they will instead send **the last value sent to the endpoint**. This is particularly useful for certain paged endpoints that use a cursor parameter.
+
+Bookmark parameters are configured in the caching settings as follows:
+```TypeScript
+endpointMap.user.getProfilesPaged.query = {
+  caching: {
+    bookmarkParameters: ["cursor"]
+  }
+}
+```
 
 [Back to Index](../README.md)

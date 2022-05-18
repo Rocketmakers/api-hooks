@@ -20,7 +20,7 @@ Application level settings are passed into the `create` method used to initializ
 
 ```TypeScript
 import { ApiHooks } from "@rocketmakers/api-hooks"
-import { apiClient } from "*API CLient location*"
+import { apiClient } from "path/to/my/apiclient"
 
 const apiHooks = ApiHooks.create(apiClient, {
   queryConfig: {
@@ -39,7 +39,7 @@ Endpoint level settings are applied by creating an "endpoint settings factory fu
 
 ```TypeScript
 import { ApiHooks } from "@rocketmakers/api-hooks"
-import { apiClient } from "*API CLient location*"
+import { apiClient } from "path/to/my/apiclient"
 
 // this factory function can be in a different file for readability
 const myEndpointConfig: ApiHooks.HookConfigLibraryFactory<typeof apiClient> = (emptyConfig) => {
@@ -70,9 +70,9 @@ Hook level settings are simply passed into the hook at the point that it's being
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
-  const [{data, isFetching}] = apiHooks.firstController.getEndpoint.useQuery({
+  const [{ data, isFetching }] = apiHooks.firstController.getEndpoint.useQuery({
     caching: {
       staleIfOlderThan: 10000
     }

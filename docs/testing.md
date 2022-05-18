@@ -6,7 +6,7 @@ A library of mock endpoints can be created in a similar way to endpoint level co
 
 ```TypeScript
 import { ApiHooks } from "@rocketmakers/api-hooks"
-import { apiClient } from "*API CLient location*"
+import { apiClient } from "path/to/my/apiclient"
 
 // this factory function can be in a different file for readability
 const myMockEndpoints: ApiHooks.MockEndpointLibraryFactory<typeof apiClient> = (emptyLibrary) => {

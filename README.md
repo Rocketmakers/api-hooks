@@ -21,15 +21,21 @@ React (17+)
   * [Application Level Settings](docs/config.md#application-level-settings)
   * [Endpoint Level Settings](docs/config.md#endpoint-level-settings)
   * [Hook Level Settings](docs/config.md#hook-level-settings)
-* [Quirks](docs/quirks.md)
-  * [Auto Invoke Held for Cache Key Parameter](docs/quirks.md#auto-invoke-held-for-cache-key-parameter)
+* [Caching](docs/caching.md)
+  * [Cache Keys](docs/caching.md#cache-keys---structuring-the-state)
+  * [Refetch Queries](docs/caching.md#refetch-queries---keeping-the-state-valid)
+  * [Cache Config](docs/caching.md#cache-config---optimizing-the-state)
+  * [Cache Quirks](docs/caching.md#caching-quirks---auto-invoke-held-for-cache-key-parameter)
 * [Testing with Mock Endpoints](docs/testing.md)
   * [Test Keys](docs/testing.md#2-using-"test-keys")
 * [Advanced Features](docs/advanced.md)
-  * [Refetch Queries](docs/advanced.md#refetch-queries)
+  * [The Processing Hook](docs/advanced.md#the-processing-hook)
   * [Lifecycle Listeners](docs/advanced.md#lifecycle-listeners)
+  * [Global Listeners](docs/advanced.md#global-listeners)
   * [Responders](docs/advanced.md#responders)
   * [Default Data](docs/advanced.md#default-data)
+  * [Payload Modifiers](docs/advanced.md#payload-modifiers)
+  * [Bookmark Parameters](docs/advanced.md#bookmark-parameters)
 * [Debugging](docs/debugging.md)
 
 ## Setting Up Your API Client
@@ -84,7 +90,7 @@ Getting the core hook library up and running is as simple as calling the `create
 
 ```TypeScript
 import { ApiHooks, EndpointIDs } from "@rocketmakers/api-hooks"
-import { apiClient } from "*API CLient location*"
+import { apiClient } from "path/to/my/apiclient"
 
 export const apiHooks = ApiHooks.create(apiClient)
 export const endpointIds = EndpointIDs.create(apiClient)
@@ -93,4 +99,4 @@ export const endpointIds = EndpointIDs.create(apiClient)
 
 The `apiHooks` constant above now contains a library of React hooks contained within an object structure that matches the controller/endpoint structure of your API Client.
 
-NOTE: The `endpointIds` constant is a library of strictly types identifiers designed for use with some of API Hooks' more advanced features (such as [mock endpoints](docs/testing.md#testing-with-mock-endpoints) and [refetch queries](docs/advanced.md#refetch-queries).) It's not required for the basic hooks to work, so feel free to add it later if/when you need it.
+NOTE: The `endpointIds` constant is a library of strictly types identifiers designed for use with some of API Hooks' more advanced features (such as [mock endpoints](docs/testing.md#testing-with-mock-endpoints) and [refetch queries](docs/caching.md#refetch-queries---keeping-the-state-valid).) It's not required for the basic hooks to work, so feel free to add it later if/when you need it.

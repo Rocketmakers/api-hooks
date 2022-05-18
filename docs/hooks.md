@@ -7,9 +7,9 @@ For example, if you stored the result of the `create` method in a constant calle
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
-  const [{data, isFetching}] = apiHooks.firstController.getEndpoint.useQuery();
+  const [{ data, isFetching }] = apiHooks.firstController.getEndpoint.useQuery();
 
 }
 ```
@@ -33,7 +33,7 @@ Here are some typical examples:
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
   const [{ data, isFetching }] = apiHooks.users.getAll.useQuery();
 
@@ -58,7 +58,7 @@ const MyComponent: React.FunctionComponent = () => {
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent<{ userId: string }> = (userId) => {
+const MyComponent: React.FC<{ userId: string }> = ({ userId }) => {
 
   const [{ data, isFetching }] = apiHooks.users.getById.useQuery({
     parameters: { id: userId },
@@ -68,25 +68,14 @@ const MyComponent: React.FunctionComponent<{ userId: string }> = (userId) => {
 }
 ```
 
-NOTE:
-
-- The `cacheKey` here is a parameter of the request representing a unique identifier. A new area will therefore be created within the cache store for each user. If the `cacheKey` was omitted here, a single area will be created within the cache store for the `users.getById` endpoint, this area will be re-used for each request.
-- The `cacheKey` property is vital here to prevent data for "user A" being returned for "user B".
-
-HINT: Cache Keys can also be created from more than one parameter by using a factory function instead of supplying a parameter name. Like this:
-
-```TypeScript
-{
-  cacheKey: params => `${params.groupId}-${params.userId}`;
-}
-```
+NOTE: More detail about caching can be found [here](caching.md)
 
 #### A manual fetch, triggered by a button:
 
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
   const [{ data, isFetching }, fetchUserList] = apiHooks.users.getAll.useQuery({
     autoInvoke: false
@@ -101,7 +90,7 @@ const MyComponent: React.FunctionComponent = () => {
 NOTE:
 
 - By default, queries will be invoked when the component loads, so if you really want to send the request manually, you'll need to remember the `autoInvoke: false` setting.
-- Manual fetches will always attempt to fetch from the server, regardless of any valid cache, this can be overridden by passing `{forceNetwork: false}` to the second argument of the manual fetch function.
+- Manual fetches will always attempt to fetch from the server, regardless of any valid cache, this can be overridden by passing `{ forceNetwork: false }` to the second argument of the manual fetch function.
 - Parameters can be sent to a query via the first argument of the manual fetch function.
 
 ---
@@ -121,7 +110,7 @@ Here are some typical examples:
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
   const [postUser, { isFetching }] = apiHooks.users.postUser.useMutation()
 
@@ -136,14 +125,14 @@ NOTE:
 - `useMutation` returns the invoke method as the _first_ argument in the response array, unlike queries which are invoked automatically and therefore the live response is the first argument.
 - Parameters can be passed into the hook with the `parameters` property, just like a query, but with a mutation it's more common to pass the parameters to the invoke method.
 - Parameters can also be split between the hook and the invoke method, with some going into the hook `parameters` property, and the rest going into the invoke method at fetch time.
-- Mutations will throw errors by default, so make sure all awaited mutation calls are wrapped in a try/catch block. If you're prefer that errors are returned to the hook's state object rather than being thrown, this can be achieved by setting the `throwErrors` setting to `false` in the mutation config.
+- Mutations will throw errors by default, so make sure all awaited mutation calls are wrapped in a try/catch block. If you'd prefer that errors are returned to the hook's state object rather than being thrown, this can be achieved by setting the `throwErrors` setting to `false` in the mutation config.
 
 #### Chaining two mutations, using a property of the response from A to call B.
 
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
   const [postGroup, { isFetching: groupIsFetching }] = apiHooks.users.postGroup.useMutation()
   const [postUser, { isFetching: userIsFetching }] = apiHooks.users.postUser.useMutation()
@@ -159,7 +148,7 @@ const MyComponent: React.FunctionComponent = () => {
 
 NOTE:
 
-- It's important to note that queries can _not_ be used in this was, as for the caching system to function properly, queries can't return a promise like mutations can.
+- It's important to note that queries can _not_ be used in this way, as for the caching system to function properly, queries can't return a promise like mutations can.
 
 ---
 
@@ -174,14 +163,14 @@ Here are some typical examples:
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
   const searchUsers = apiHooks.users.search.useRequest()
 
   const [userList, setUserList] = React.useState([])
 
   const populateUserListFromInput = React.useCallback((searchInput) => {
-    const newUserList = await searchUsers({query: searchInput})
+    const newUserList = await searchUsers({ query: searchInput })
     setUserList(newUserList)
   }, [searchUsers, setUserList])
 }
@@ -209,7 +198,7 @@ The "Refresh Users" button might look like this:
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
   const { refetchAllQueries } = apiHooks.users.getUser.useTools()
 
@@ -218,7 +207,7 @@ const MyComponent: React.FunctionComponent = () => {
   )
 }
 ```
-The above will log a refresh request against all cache keys associated with the `getUser` endpoint. Any instances that are mounted on screen will refresh immediately, and any cache that is not currently used by a mounted component will be invalidated, forcing a re-fetch the next time it is requested. (This behaviour is the same as refetch queries [below](#advanced-refetch-query-management).)
+The above will log a refresh request against all cache keys associated with the `getUser` endpoint. Any instances that are mounted on screen will refresh immediately, and any cache that is not currently used by a mounted component will be invalidated, forcing a re-fetch the next time it is requested. (This behaviour is the same as [refetch queries](caching.md#refetch-queries---keeping-the-state-valid).)
 
 For more flexibility, an object can be passed to `refetchAllQueries` specifying alternative parameters to be used with any immediate refetch, if not passed, the last used parameters will be re-sent. Alternatively, an array of object can also be passed allowing this function to re-fetch on **specific cache keys only**.
 
@@ -227,7 +216,7 @@ For more flexibility, an object can be passed to `refetchAllQueries` specifying 
 ```TypeScript
 import { apiHooks } from "*create method location*"
 
-const MyComponent: React.FunctionComponent = () => {
+const MyComponent: React.FC = () => {
 
   const { refetchAllQueries } = apiHooks.users.getUsers.useTools()
 
