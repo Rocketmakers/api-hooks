@@ -99,18 +99,18 @@ export namespace ApiHooks {
   /** The root type of the defaultData object, represents a dictionary of controllers */
   export type DefaultDataControllerLibrary<TApiClient> = { [TControllerKey in keyof TApiClient]: DefaultDataLibrary<TApiClient[TControllerKey]> };
 
-  /**
-   * Adds the three hooks to each endpoint within a controller (if it's a function within a controller, it's an endpoint)
-   * @param useQuery The hook to be used if the endpoint is a GET and should interface with the caching system
-   * @param useMutation The hook to be used if the endpoint is a POST/PUT/DELETE and we just need a fetcher and sone live, local state. without any caching.
-   * @param useRequest The hook to be used for any request when we ONLY want the basic promise constructor, with no local state and no caching at all.
-   */
+  /** Adds the three hooks to each endpoint within a controller (if it's a function within a controller, it's an endpoint) */
   export type EndpointHooks<TApiController, TProcessingResponse> = {
     [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction
       ? {
+          /** The hook to be used if the endpoint is a GET and should interface with the caching system. */
           useQuery: UseQuery<TApiController[TEndpointKey], TProcessingResponse>;
+          /** The hook to be used if the endpoint is a POST/PUT/DELETE and we just need a fetcher and sone live, local state. without any caching. */
           useMutation: UseMutation<TApiController[TEndpointKey], TProcessingResponse>;
+          /** The hook to be used for any request when we ONLY want the basic promise constructor, with no local state and no caching at all. */
           useRequest: UseRequest<TApiController[TEndpointKey]>;
+          /** This hook returns a library of useful tools associated with a single endpoint. */
+          useTools: UseTools<TApiController[TEndpointKey]>;
         }
       : never;
   };
@@ -133,21 +133,19 @@ export namespace ApiHooks {
       : never;
   };
 
-  /**
-   * Adds the config options to each endpoint within a controller (if it's a function within a controller, it's an endpoint)
-   * @param query (optional) The query settings to apply to each endpoint, overrides the application settings, but can be overridden at hook level
-   * @param mutation (optional) The mutation settings to apply to each endpoint, overrides the application settings, but can be overridden at hook level
-   * @param request (optional) The request settings to apply to each endpoint, overrides the application settings, but can be overridden at hook level
-   */
+  /** Adds the config options to each endpoint within a controller (if it's a function within a controller, it's an endpoint) */
   type HookEndpointConfig<TApiController> = {
     [TEndpointKey in keyof TApiController]: TApiController[TEndpointKey] extends AnyFunction
       ? {
+          /** The query settings to apply to each endpoint, overrides the application settings, but can be overridden at hook level */
           query?: Partial<
             UseQueryConfigSettings<FirstParamOf<TApiController[TEndpointKey]>, PromiseResult<ReturnType<TApiController[TEndpointKey]>>>
           >;
+          /** The mutation settings to apply to each endpoint, overrides the application settings, but can be overridden at hook level */
           mutation?: Partial<
             UseMutationSettings<FirstParamOf<TApiController[TEndpointKey]>, PromiseResult<ReturnType<TApiController[TEndpointKey]>>>
           >;
+          /** The request settings to apply to each endpoint, overrides the application settings, but can be overridden at hook level */
           request?: Partial<UseRequestSettings<FirstParamOf<TApiController[TEndpointKey]>, PromiseResult<ReturnType<TApiController[TEndpointKey]>>>>;
         }
       : never;
@@ -338,7 +336,7 @@ export namespace ApiHooks {
    */
   export type UseQueryResponse<TCache, TParam, TProcessingResponse> = [
     LiveResponse<TCache, TProcessingResponse>,
-    (param?: TParam, fetchSettings?: UseQueryFetchSettings<TCache>) => void,
+    (param?: Partial<TParam>, fetchSettings?: UseQueryFetchSettings<TCache>) => void,
     (newState: TCache, overrideSettings?: UseQueryConfigSettings<TParam, TCache>) => void
   ];
 
@@ -381,7 +379,7 @@ export namespace ApiHooks {
     /**
      * The parameters to send to the request
      */
-    parameters?: TParam;
+    parameters?: Partial<TParam>;
     /**
      * An optional function to modify the payload stored for this endpoint, receives any stored data as well as the incoming data. Also receives previous params and new params
      */
@@ -442,7 +440,7 @@ export namespace ApiHooks {
    * [2] - A "refetch"
    */
   export type UseMutationResponse<TResponse, TParam, TProcessingResponse> = [
-    (param?: TParam, fetchSettings?: Partial<UseMutationSettings<TParam, TResponse>>) => Promise<TResponse>,
+    (param?: Partial<TParam>, fetchSettings?: Partial<UseMutationSettings<TParam, TResponse>>) => Promise<TResponse>,
     LiveResponse<TResponse, TProcessingResponse>,
     (refetchQueries: RefetchQueryDefinition<TParam, UseMutationSettings<TParam, TResponse>>) => void
   ];
@@ -466,7 +464,7 @@ export namespace ApiHooks {
     /**
      * The parameters of the mutation request can be optionally defined here.
      */
-    parameters?: TParam;
+    parameters?: Partial<TParam>;
     /**
      * A set of endpoint IDs denoting queries to be re-fetched after the mutation has happened.
      */
@@ -514,6 +512,40 @@ export namespace ApiHooks {
    * NOTE: The params and fetch settings here will override the params sent to the hook execution settings, but any hook execution params will be used if nothing is passed here.
    */
   type UseRequestResponse<TResponse, TParam> = (param?: TParam, fetchSettings?: Partial<UseRequestSettings<TParam, TResponse>>) => Promise<TResponse>;
+
+  /** USE TOOLS TYPES */
+
+  /**
+   * The basic tools settings used at execution level only.
+   */
+  export interface UseToolsSettings {
+    /**
+     * A key to show in the debug logs, most useful at hook level to differentiate between two uses of the same hook when debugging.
+     */
+    debugKey?: string;
+  }
+
+  /** The type of the useTools hook, receives execution settings and returns a library of useful tools */
+  export interface UseTools<TEndpoint extends AnyFunction> {
+    (settings?: UseToolsSettings): UseToolsResponse<Partial<FirstParamOf<TEndpoint>>>;
+  }
+
+  /** Additional settings for a cache key specific refetch */
+  export interface UseToolsRefetchAllCacheKeyConfig<TParam> extends ApiHooksStore.RefetchConfig<TParam> {
+    cacheKeyValue: string | number;
+  }
+
+  /**
+   * The type denoting the response of the useTools hook. A Library of useful tools.
+   */
+  export type UseToolsResponse<TParam> = {
+    /**
+     * Logs a refetch request for all queries associated with this endpoint only.
+     * @param config (optional) Either an array of cache key specific configs, or a general config to be applied to all cache keys.
+     * NOTE: If an array is passed here, only the cache key values supplied will be re-fetched.
+     */
+    refetchAllQueries: (config?: ApiHooksStore.RefetchConfig<TParam> | Array<UseToolsRefetchAllCacheKeyConfig<TParam>>) => void;
+  };
 
   /** UTILITY FUNCTIONS */
 
@@ -634,11 +666,21 @@ export namespace ApiHooks {
           log(`API Hooks Request, Endpoint: ${endpointHash}${debugKey ? ` - ${debugKey}` : ''} -`, ...messages);
         }
       };
+      /**
+       * Logs messages from useTools hooks to the console if in debug mode
+       * - includes some data about the controller and endpoint
+       * - calls the root logging utility function
+       */
+      const toolsLog = (messages: any[], debugKey?: string) => {
+        if (generalConfig?.debugMode) {
+          log(`API Hooks Tools, Endpoint: ${endpointHash}${debugKey ? ` - ${debugKey}` : ''} -`, ...messages);
+        }
+      };
 
       /**
        * An in memory storage container to avoid showing multiple config warnings for the same endpoint
        */
-      const endpointWarningsShown: HookType[] = [];
+      const endpointWarningsShown: string[] = [];
 
       /**
        * Called when an endpoint is used with either a query or mutation hook.
@@ -648,14 +690,14 @@ export namespace ApiHooks {
       const endpointUsed = (type: HookType) => {
         if (
           generalConfig?.showMissingConfigWarnings &&
-          !endpointWarningsShown.some((t) => t === type) &&
+          !endpointWarningsShown.some((e) => e === endpointHash) &&
           ((!Object.keys(querySettings).length && type === 'query') || (!Object.keys(mutationSettings).length && type === 'mutation'))
         ) {
           const configExample = type === 'query' ? 'cache keys' : 'refetch queries';
           warn(
             `API Hooks WARNING! - The endpoint "${endpointHash}" has been used as a ${type} without any ${type} config defined at endpoint level. Do you need to add any config? (i.e. ${configExample})`
           );
-          endpointWarningsShown.push(type);
+          endpointWarningsShown.push(endpointHash);
         }
       };
 
@@ -1398,6 +1440,40 @@ export namespace ApiHooks {
           );
 
           return fetch;
+        },
+        /**
+         * useTools
+         * - This hook returns a set of useful tools relating to the endpoint in question.
+         * - Receives execution level settings only.
+         */
+        useTools: (executionSettings: UseToolsSettings = {}): UseToolsResponse<any> => {
+          const [state, dispatch] = React.useContext(ApiHooksStore.Context);
+          const myState = state[endpointHash];
+
+          const debugKey = executionSettings?.debugKey;
+
+          const refetchAllQueries = React.useCallback<UseToolsResponse<any>['refetchAllQueries']>(
+            (config) => {
+              if (!myState) {
+                toolsLog(['Refetch triggered but no state for endpoint'], debugKey);
+                return;
+              }
+              const cacheKeysToFetch = Array.isArray(config) && config.length ? config.map((c) => c.cacheKeyValue) : Object.keys(myState);
+              for (const cacheKeyValue of cacheKeysToFetch) {
+                const myStateSlice = myState[cacheKeyValue];
+                if (!myStateSlice) {
+                  toolsLog(['Refetch triggered but no state for endpoint with cacheKey value', { cacheKeyValue }], debugKey);
+                  continue;
+                }
+                const myConfig = Array.isArray(config) ? config.find((c) => c.cacheKeyValue === cacheKeyValue) : config;
+                toolsLog(['Processing refetch with config', { cacheKeyValue, config: myConfig }], debugKey);
+                dispatch?.(ApiHooksStore.Actions.refetch(endpointHash, cacheKeyValue.toString(), myConfig && { ...myConfig }));
+              }
+            },
+            [myState, debugKey]
+          );
+
+          return { refetchAllQueries };
         },
       };
       return controllerDictionary;

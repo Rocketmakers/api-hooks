@@ -27,9 +27,9 @@ export namespace ApiHooksStore {
   export type RefetchParamOverrideMode = 'merge' | 'replace';
 
   /** The optional configuration applied to a refetch query */
-  export interface RefetchConfig {
+  export interface RefetchConfig<TParam = any> {
     /** Params to override */
-    params?: any;
+    params?: TParam;
     /** How to override them */
     paramMode?: RefetchParamOverrideMode;
   }
@@ -232,7 +232,7 @@ export namespace ApiHooksStore {
      * @param cacheKeyValue A key to cache the data by - each unique key will represent a different state slice in the dictionary.
      * @param data The data returned from the request
      * @param maxCachingDepth The maximum number of data sets to store for an endpoint - comes from a query config setting
-     * @param isSilentLoad Setting this to "true"
+     * @param isSilent Setting this to "true" means that state updates will happen without a re-render
      * @returns An action object to be dispatched
      */
     export function loaded<TData>(
