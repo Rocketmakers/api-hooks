@@ -1,0 +1,51 @@
+// import font styles
+@import "./shared/fonts";
+
+// ARMSTRONG IMPORTs
+
+// import variables
+@import "~@rocketmakers/armstrong-edge/dist/imports.scss";
+@import "~@rocketmakers/armstrong-edge/dist/animations.scss";
+
+// import chosen icon font
+@import "~@rocketmakers/armstrong-edge/dist/icomoon.scss";
+@import "~@rocketmakers/armstrong-edge/dist/linearicons.scss";
+
+// import base component styles
+@import "~@rocketmakers/armstrong-edge/dist/basic.scss";
+// import styled component styles
+@import "~@rocketmakers/armstrong-edge/dist/prototyping.scss";
+// import animated component styles
+@import "~@rocketmakers/armstrong-edge/dist/animated.scss";
+
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#host,
+.shell {
+  font-family: Roboto, Helvetica, arial, sans-serif;
+}
+
+.shell {
+  padding: 10px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  @include space-between-children-vertical($spacing-xsmall);
+}
+fieldset {
+  display: flex;
+  flex-direction: column;
+  @include space-between-children-vertical($spacing-xsmall);
+}
+
+.cool {
+  background-color: red !important;
+}

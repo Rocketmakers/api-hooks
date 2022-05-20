@@ -1,25 +1,82 @@
 {
-  "name": "api-hooks",
-  "version": "1.4.0",
+  "name": "@rocketmakers/api-hooks",
+  "version": "1.4.1",
   "description": "Rocketmakers front-end library for parsing a generated Typescript API client into a set of configurable React hooks for fetching and mutating data.",
-  "main": "index.js",
-  "directories": {
-    "example": "examples"
-  },
+  "main": "./dist/index.js",
+  "module": "./dist/esm/index.js",
+  "typings": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
-    "start": "(cd playground && npm start)",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "(cd module && npm i) && (cd playground && npm i)",
-    "check-versions": "ncu && (cd module && ncu) && (cd playground && ncu)",
-    "upgrade-all": "ncu -u && (cd module && ncu -u) && (cd playground && ncu -u) && npm i"
+    "start": "start-storybook -p 3000 -c _test/storybook",
+    "build-cjs": "tsc --pretty --extendedDiagnostics -p tsconfig-cjs.json -d",
+    "build-esm": "tsc --pretty --extendedDiagnostics -p tsconfig-esm.json -d",
+    "build": "npm run build-cjs && npm run build-esm",
+    "lint": "eslint --max-warnings=0 \"**/*.ts{,?}\" --cache --ignore-path .eslintignore --ext ts --ext tsx",
+    "lint-fix": "npm run lint -- --fix",
+    "test": "jest test",
+    "prepare": "npm run lint && npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/Rocketmakers/api-hooks.git"
   },
   "author": "developers@rocketmakers.com",
+  "keywords": [
+    "API",
+    "Hooks",
+    "Rocketmakers",
+    "React",
+    "Typescript",
+    "Query",
+    "Mutation"
+  ],
   "license": "MIT",
+  "peerDependencies": {
+    "react": "17.x || 18.x"
+  },
   "devDependencies": {
-    "npm-check-updates": "^13.0.0"
+    "@rocketmakers/armstrong-edge": "^1.15.1",
+    "@semantic-release/git": "^10.0.1",
+    "@storybook/addon-a11y": "^6.5.3",
+    "@storybook/addon-actions": "^6.5.3",
+    "@storybook/addon-essentials": "^6.5.3",
+    "@storybook/addon-interactions": "^6.5.3",
+    "@storybook/addon-links": "^6.5.3",
+    "@storybook/builder-vite": "^0.1.35",
+    "@storybook/react": "^6.5.3",
+    "@testing-library/react-hooks": "^8.0.0",
+    "@types/jest": "^27.5.1",
+    "@types/react": "^17.0.45",
+    "@types/react-dom": "^17.0.17",
+    "@typescript-eslint/eslint-plugin": "^5.25.0",
+    "@typescript-eslint/parser": "^5.25.0",
+    "eslint": "^8.15.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.5.1",
+    "eslint-plugin-no-only-tests": "^2.6.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.30.0",
+    "eslint-plugin-react-hooks": "^4.5.0",
+    "jest": "^28.1.0",
+    "jest-config": "^28.1.0",
+    "jest-environment-jsdom": "^28.1.0",
+    "jest-junit": "^13.2.0",
+    "prettier": "^2.6.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "sass": "^1.52.0",
+    "semantic-release": "^19.0.2",
+    "shx": "^0.3.4",
+    "ts-jest": "^28.0.2",
+    "ts-node": "^10.7.0",
+    "tslib": "^2.4.0",
+    "typescript": "^4.6.4"
   }
 }

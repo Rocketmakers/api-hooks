@@ -1,0 +1,30 @@
+name: Release
+on:
+  push:
+    branches:
+      - master
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+      - name: Set Node.js 16.14.2
+        uses: actions/setup-node@master
+        with:
+          node-version: 16.14.2
+      - name: Install dependencies
+        run: npm ci
+      - name: build
+        run: npm run build
+      - name: test
+        run: npm test
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
+        working-directory: ./module

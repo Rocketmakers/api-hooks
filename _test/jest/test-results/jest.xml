@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="1" failures="0" errors="0" time="1.847">
+  <testsuite name="undefined" errors="0" failures="0" skipped="0" timestamp="2022-05-20T11:37:15" time="1.567" tests="1">
+    <testcase classname=" Mock endpoint should receive test key correctly" name=" Mock endpoint should receive test key correctly" time="0.012">
+    </testcase>
+  </testsuite>
+</testsuites>
