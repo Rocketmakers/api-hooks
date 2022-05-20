@@ -31,13 +31,13 @@ jobs:
 
       - name: npm install
         if: steps.cache-npm-build.outputs.cache-hit != 'true'
-        run: (cd module && npm ci)
+        run: npm ci
 
       - name: lint
-        run: (cd module && npm run lint)
+        run: npm run lint
 
       - name: test
-        run: (cd module && npm run lint)
+        run: npm run test
 
       - name: build
-        run: (cd module && npm run build)
+        run: npm run build
