@@ -1,7 +1,5 @@
 node_modules
 dist
 www
-module/README.md
-module/docs
 .DS_Store
 .eslintcache

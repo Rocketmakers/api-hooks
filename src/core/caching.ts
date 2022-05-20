@@ -77,7 +77,7 @@ export namespace ApiHooksCaching {
       return '{}';
     }
     return JSON.stringify(
-      Object.keys(params)
+      Object.keys({ ...params })
         .sort()
         .reduce((memo, key) => ({ ...memo, [key]: params[key] }), {})
     );
