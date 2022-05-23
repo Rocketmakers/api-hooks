@@ -21,7 +21,7 @@ module.exports = {
 
   allowTicketNumber: true,
   isTicketNumberRequired: false,
-  ticketNumberPrefix: 'ARM-',
+  ticketNumberPrefix: 'APH-',
   allowCustomScopes: true,
   allowBreakingChanges: ['feat', 'fix'],
   skipQuestions: ['body', 'footer', 'scope', 'breaking'],
