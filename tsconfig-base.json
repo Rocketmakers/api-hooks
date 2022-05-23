@@ -17,5 +17,5 @@
     "moduleResolution": "node",
     "lib": ["es2016", "dom", "dom.iterable"]
   },
-  "exclude": ["node_modules", "tests", "_test", "stories", "mock", "*jest.config.*"]
+  "exclude": ["node_modules", "tests", "_test", "stories", "mock", "*jest.config.*", "dist"]
 }

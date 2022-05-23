@@ -4,5 +4,5 @@
     "target": "es5",
     "module": "CommonJS"
   },
-  "exclude": ["node_modules", "*.js"]
+  "exclude": ["node_modules", "*.js", "dist"]
 }
