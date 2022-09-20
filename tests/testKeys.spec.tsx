@@ -18,7 +18,7 @@ it('Mock endpoint should receive test key correctly', async () => {
   };
 
   const { result, waitForValueToChange } = renderHook(() => useTestKeysTest(), {
-    wrapper: ({ children }) => <Wrapper testKeys={testKeys}>{children}</Wrapper>,
+    wrapper: ({ children }: React.PropsWithChildren) => <Wrapper testKeys={testKeys}>{children}</Wrapper>,
   });
 
   await waitForValueToChange(() => result.current);

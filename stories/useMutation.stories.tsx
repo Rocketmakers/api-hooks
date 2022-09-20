@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Button, EmailInput, Form, TextInput } from '@rocketmakers/armstrong-edge';
 import { MemoryServer } from '../mock/servers/memory';
 import { apiHooks } from '../mock/state/apiHooks';
@@ -6,7 +7,7 @@ import { createMeta } from '../_test/storybook/utils';
 const testUser = MemoryServer.getUsers()[0].id;
 
 export const Default = () => {
-  const [{ data }, refetch] = apiHooks.user.getUser.useQuery({
+  const [{ data }] = apiHooks.user.getUser.useQuery({
     parameters: {
       id: testUser,
     },
@@ -14,11 +15,11 @@ export const Default = () => {
 
   const [updateUser, { isFetching }] = apiHooks.user.updateUser.useMutation({
     parameters: {
-      requestDelay: 1000
-    }
+      requestDelay: 1000,
+    },
   });
 
-  const { formProp, formState } = Form.use<typeof data>(
+  const { formProp, formState } = Form.use<MemoryServer.IUser>(
     data ?? {
       id: testUser,
       email: '',

@@ -574,7 +574,7 @@ export namespace ApiHooks {
    * @param apiClient The API client to parse and create an entry for each controller, and then another for each endpoint.
    * @returns The empty dictionary ready for populating in `../endpointSettings.ts` and `../mockEndpoints.ts`
    */
-  function createEmptyHookLibraryDefaults<TApiClient, TLibrary>(apiClient: TApiClient): TLibrary {
+  function createEmptyHookLibraryDefaults<TApiClient extends object, TLibrary>(apiClient: TApiClient): TLibrary {
     return Object.keys(apiClient).reduce((controllerMemo, controllerKey) => {
       const newControllerMemo = { ...controllerMemo };
       newControllerMemo[controllerKey] = Object.keys(apiClient[controllerKey]).reduce((endpointMemo, endpointKey) => {
@@ -598,7 +598,7 @@ export namespace ApiHooks {
    * @param defaultDataLibrary The dictionary of default data - populated in `../defaultData.ts`
    * @returns The useQuery and useMutation hooks
    */
-  function createHooks<TController, TProcessingResponse = undefined>(
+  function createHooks<TController extends object, TProcessingResponse = undefined>(
     rootKey: string,
     controller: TController,
     rootQuerySettings: UseQueryConfigSettings<any, any>,
@@ -1505,7 +1505,7 @@ export namespace ApiHooks {
    * @param config The application level config for the useQuery and useMutation hooks. Overrides the system config but can potentially be overridden at endpoint and hook level
    * @returns The hooks
    */
-  export function create<TApiClient, TProcessingResponse = undefined>(
+  export function create<TApiClient extends object, TProcessingResponse = undefined>(
     apiClient: TApiClient,
     config: CreationSettings<TApiClient, any, TProcessingResponse> = {}
   ) {
@@ -1552,7 +1552,7 @@ export namespace ApiHooks {
    * @param config The application level config for the useQuery and useMutation hooks. Overrides the system config but can potentially be overridden at endpoint and hook level
    * @returns The hooks
    */
-  export function createMulti<TApiClientDictionary = Record<any, any>, TProcessingResponse = any>(
+  export function createMulti<TApiClientDictionary extends object = Record<any, any>, TProcessingResponse = any>(
     apiClientDictionary: TApiClientDictionary,
     config: CreationSettingsMulti<TApiClientDictionary, any> = {}
   ): ControllerHooksMulti<TApiClientDictionary, TProcessingResponse> {

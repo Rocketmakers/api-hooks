@@ -68,7 +68,7 @@ export namespace EndpointIDs {
    * @param apiClient The API client to parse, must be an object containing controller objects with nested endpoint functions
    * @returns A dictionary of endpoint identifiers to be used for declaring refetch queries and for testing.
    */
-  export function create<TApiClient = any>(apiClient: TApiClient): ControllerMethods<TApiClient> {
+  export function create<TApiClient extends object = any>(apiClient: TApiClient): ControllerMethods<TApiClient> {
     // Reduce client controller dictionary into endpoint ID functions
     return Object.keys(apiClient).reduce<ControllerMethods<TApiClient>>((memo, controllerKey) => {
       const newMemo = { ...memo };
@@ -91,7 +91,9 @@ export namespace EndpointIDs {
    * @param apiClientDictionary A dictionary of API clients to parse, must be an object containing client key strings mapped to clients containing controller objects with nested endpoint functions
    * @returns A dictionary of endpoint identifiers to be used for declaring refetch queries and for testing.
    */
-  export function createMulti<TApiClientDictionary = any>(apiClientDictionary: TApiClientDictionary): ControllerMethodsMulti<TApiClientDictionary> {
+  export function createMulti<TApiClientDictionary extends object = any>(
+    apiClientDictionary: TApiClientDictionary
+  ): ControllerMethodsMulti<TApiClientDictionary> {
     return Object.keys(apiClientDictionary).reduce<ControllerMethodsMulti<TApiClientDictionary>>((memo, clientKey) => {
       const newMemo = { ...memo };
       const client = apiClientDictionary[clientKey];
