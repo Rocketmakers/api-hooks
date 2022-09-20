@@ -177,7 +177,7 @@ export namespace ApiHooksCaching {
     if (refetchQuery.cacheKeyFromMutationParam) {
       const value = parseCacheKey(params, refetchQuery.cacheKeyFromMutationParam, context);
       if (!value) {
-        throw new Error(`Invalid refetch query - mutation parameter ${refetchQuery.cacheKeyFromMutationParam} has no value!`);
+        throw new Error(`Invalid refetch query - cache key result has no value!`);
       }
       return value;
     }

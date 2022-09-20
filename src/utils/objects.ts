@@ -21,7 +21,7 @@ export namespace Objects {
   /**
    * Deep merge two objects.
    * @param target The target object to merge into
-   * @param source The new source objects
+   * @param sources The new source objects
    */
   export function mergeDeep<TObject>(target: TObject, ...sources: Partial<TObject>[]) {
     if (!isObject(target)) {
