@@ -195,6 +195,12 @@ export namespace ApiHooks {
      * The final combined settings at the time of the fetch, typings will be different depending on whether it's `useQuery` or `useMutation`
      */
     settings?: UseQuerySettings<any, any> | UseMutationSettings<any, any>;
+    /**
+     * The manual fetch method associated with the hook being used, typings will be different depending on whether it's `useQuery` or `useMutation`.
+     */
+    fetch:
+      | ((param?: Partial<any> | undefined, fetchSettings?: UseQueryFetchSettings<TRawResponse> | undefined) => void)
+      | ((param?: Partial<any> | undefined, fetchSettings?: Partial<UseMutationSettings<any, TRawResponse>> | undefined) => Promise<TRawResponse>);
   }
 
   /**
@@ -1177,8 +1183,9 @@ export namespace ApiHooks {
               data: valueToReturn.data,
               error: valueToReturn.error,
               settings: lastUsedSettings.current,
+              fetch: manualInvoke,
             };
-          }, [valueToReturn, lastUsedSettings.current]);
+          }, [valueToReturn, lastUsedSettings.current, manualInvoke]);
 
           const processed = processingHook?.(processingHookDetails);
           React.useEffect(() => {
@@ -1337,8 +1344,9 @@ export namespace ApiHooks {
               data: fetchStateResponse.data,
               error: fetchStateResponse.error,
               settings: lastUsedSettings.current,
+              fetch,
             };
-          }, [fetchStateResponse, lastUsedSettings.current]);
+          }, [fetchStateResponse, lastUsedSettings.current, fetch]);
 
           // run the processing hook
           const processed = processingHook?.(processingHookDetails);
