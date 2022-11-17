@@ -930,6 +930,12 @@ export namespace ApiHooks {
               ApiHooksEvents.onFetchStart.executeEventHooks(endpointHash, fetchSettings.parameters, 'query');
               fetchSettings.onFetchStart?.(fetchSettings, mode);
 
+              // store a copy of the previous fetch params before they get overwritten with the new ones
+              const previousParams = { ...(lastUsedSettings.current?.parameters ?? {}) };
+
+              // store the final settings for the processing hook
+              lastUsedSettings.current = { ...fetchSettings };
+
               // set up a try/catch - we're about to make the actual request
               let value: any;
               let error: any;
@@ -943,12 +949,6 @@ export namespace ApiHooks {
                 } else {
                   value = await promiseFactory(fetchSettings.parameters);
                 }
-
-                // store a copy of the previous fetch params before they get overwritten with the new ones
-                const previousParams = { ...(lastUsedSettings.current?.parameters ?? {}) };
-
-                // store the final settings for the processing hook
-                lastUsedSettings.current = { ...fetchSettings };
 
                 // send the data to the store by despatching the loaded action
                 queryLog(['Fetch successful, with result:', value], fetchSettings.debugKey);
@@ -1284,6 +1284,9 @@ export namespace ApiHooks {
               ApiHooksEvents.onFetchStart.executeEventHooks(endpointHash, finalSettings.parameters, 'mutation');
               finalSettings.onFetchStart?.(finalSettings, 'manual');
 
+              // store final settings used for processing hook and refetch queries.
+              lastUsedSettings.current = finalSettings;
+
               // fetch the data value from either the real or mock endpoint, depending on the settings
               let value: any;
               let error: any;
@@ -1296,9 +1299,6 @@ export namespace ApiHooks {
                 } else {
                   value = await promiseFactory(finalSettings.parameters);
                 }
-
-                // store final settings used for processing hook and refetch queries.
-                lastUsedSettings.current = finalSettings;
 
                 // set live response to success
                 setFetchStateResponse({ data: value, fetchingMode: 'not-fetching', isFetching: false, error: undefined });
