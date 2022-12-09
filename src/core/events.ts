@@ -74,7 +74,11 @@ export namespace ApiHooksEvents {
   /** TYPES */
 
   export type OnBeforeInitialStateCallback = (testKeys?: ApiHooksStore.TestKeyState) => ApiHooksStore.State | undefined;
-  export type OnStateUpdated = (state: ApiHooksStore.State, testKeys?: ApiHooksStore.TestKeyState) => void;
+  export type OnStateUpdated = (
+    state: ApiHooksStore.State,
+    action?: ApiHooksStore.Actions.GenericAction,
+    testKeys?: ApiHooksStore.TestKeyState
+  ) => void;
   export type OnFetchStart = (endpointID: string, parameters: any, hookType: ApiHooks.HookType) => void;
   export type OnFetchSuccess = (endpointID: string, parameters: any, hookType: ApiHooks.HookType, response: any) => void;
   export type OnFetchError = (endpointID: string, parameters: any, hookType: ApiHooks.HookType, error: any) => void;

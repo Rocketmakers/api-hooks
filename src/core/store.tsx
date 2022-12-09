@@ -411,6 +411,11 @@ export namespace ApiHooksStore {
    */
   export const Provider: React.FC<React.PropsWithChildren<ProviderProps>> = ({ children, testKeys }) => {
     /**
+     * Stores the action of each dispatch so that it can be passed into event hooks
+     */
+    const lastActionRef = React.useRef<Actions.GenericAction>();
+
+    /**
      * Execute the "onBeforeInitialState" event hooks and retrieve some potential state to use
      */
     const initialState = React.useMemo(() => {
@@ -427,11 +432,23 @@ export namespace ApiHooksStore {
      */
     React.useEffect(() => {
       if (ApiHooksEvents.onStateUpdated.hasEventHooks()) {
-        ApiHooksEvents.onStateUpdated.executeEventHooks(state, testKeys);
+        ApiHooksEvents.onStateUpdated.executeEventHooks(state, lastActionRef.current, testKeys);
       }
     }, [state]);
 
-    return <Context.Provider value={[state, dispatch, testKeys]}>{children}</Context.Provider>;
+    /**
+     * Override the root dispatch function.
+     * - This is necessary to store the action in a ref for use elsewhere.
+     */
+    const dispatchOverride = React.useCallback<typeof dispatch>(
+      (action) => {
+        lastActionRef.current = action;
+        dispatch(action);
+      },
+      [dispatch]
+    );
+
+    return <Context.Provider value={[state, dispatchOverride, testKeys]}>{children}</Context.Provider>;
   };
 
   /**
