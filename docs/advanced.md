@@ -82,7 +82,7 @@ ApiHooksEvents.onBeforeInitialState.addEventHook(() => {
   return JSON.parse(localStorage.getItem("my-data-store") ?? "{}")
 })
 
-ApiHooksEvents.onStateUpdated.addEventHook((state) => {
+ApiHooksEvents.onCacheUpdated.addEventHook((state) => {
   localStorage.setItem("my-data-store", JSON.stringify(state))
 })
 ```
@@ -90,6 +90,7 @@ ApiHooksEvents.onStateUpdated.addEventHook((state) => {
 Here's a list of all global events that can be hooked into, some of these are similar to the hook level [lifecycle listeners](#lifecycle-listeners):
 - `onBeforeInitialState` - called just before the initial render, receives any test keys that have been defined and **must return an object to be used as the initial state!**
 - `onStateUpdated` - called every time a state change is made, receives the new state and any test keys that have been defined.
+- `onCacheUpdated` - called every time the cached data changes, receives the new cached data state and any test keys that have been defined.
 - `onFetchStart` - called immediately **before** a request is made to the API, it receives the `controller.endpoint` endpoint ID, any parameters sent to the request, and the hook type used (`query`, `mutation` or `request`)
 - `onFetchSuccess` - called immediately **after** a **successful** response has returned from the API, it receives the `controller.endpoint` endpoint ID, any parameters sent to the request, and the hook type used (`query`, `mutation` or `request`), and the response from the API.
 - `onFetchError` - called immediately **after** a **failed** response has returned from the API, it receives the `controller.endpoint` endpoint ID, any parameters sent to the request, and the hook type used (`query`, `mutation` or `request`), and the error from the API.
