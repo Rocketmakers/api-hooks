@@ -442,7 +442,7 @@ export namespace ApiHooksStore {
      */
     React.useEffect(() => {
       if (ApiHooksEvents.onCacheUpdated.hasEventHooks()) {
-        ApiHooksEvents.onCacheUpdated.executeEventHooks(state, testKeys);
+        ApiHooksEvents.onCacheUpdated.executeEventHooks(cacheOnlyState, testKeys);
       }
     }, [cacheOnlyState]);
 
