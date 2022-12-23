@@ -79,6 +79,7 @@ export namespace ApiHooksEvents {
     action?: ApiHooksStore.Actions.GenericAction,
     testKeys?: ApiHooksStore.TestKeyState
   ) => void;
+  export type OnCacheUpdated = (state: ApiHooksStore.State, testKeys?: ApiHooksStore.TestKeyState) => void;
   export type OnFetchStart = (endpointID: string, parameters: any, hookType: ApiHooks.HookType) => void;
   export type OnFetchSuccess = (endpointID: string, parameters: any, hookType: ApiHooks.HookType, response: any) => void;
   export type OnFetchError = (endpointID: string, parameters: any, hookType: ApiHooks.HookType, error: any) => void;
@@ -99,6 +100,14 @@ export namespace ApiHooksEvents {
    * - Caution: Callbacks registered to this event will be called frequently
    */
   export const onStateUpdated = new EventManager<OnStateUpdated>();
+
+  /**
+   * The "onCacheUpdated" event is triggered every time the APIHooks cached data is updated.
+   * - This will not be triggered or contain data for "loading" or "error" state updates, data only.
+   * - Callbacks will receive the state object that has just been updated.
+   * - Caution: Callbacks registered to this event will be called frequently
+   */
+  export const onCacheUpdated = new EventManager<OnCacheUpdated>();
 
   /**
    * The "onFetchStart" event is triggered every time the APIHooks state is changed.

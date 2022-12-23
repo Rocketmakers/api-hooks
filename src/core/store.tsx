@@ -426,6 +426,7 @@ export namespace ApiHooksStore {
      * The root reducer
      */
     const [state, dispatch] = React.useReducer(reducer, initialState);
+    const [cacheOnlyState, dispatchCacheOnlyState] = React.useReducer(reducer, initialState);
 
     /**
      * Execute the "onStateUpdated" event hooks and pass the updated state
@@ -437,6 +438,15 @@ export namespace ApiHooksStore {
     }, [state]);
 
     /**
+     * Execute the "onCacheUpdated" event hooks and pass the updated state
+     */
+    React.useEffect(() => {
+      if (ApiHooksEvents.onCacheUpdated.hasEventHooks()) {
+        ApiHooksEvents.onCacheUpdated.executeEventHooks(state, testKeys);
+      }
+    }, [cacheOnlyState]);
+
+    /**
      * Override the root dispatch function.
      * - This is necessary to store the action in a ref for use elsewhere.
      */
@@ -444,6 +454,10 @@ export namespace ApiHooksStore {
       (action) => {
         lastActionRef.current = action;
         dispatch(action);
+        const { isResetAction, isRefetchAction } = ApiHooksStore.Actions;
+        if (action && !isRefetchAction(action) && (isResetAction(action) || action.status === 'loaded')) {
+          dispatchCacheOnlyState(action);
+        }
       },
       [dispatch]
     );
