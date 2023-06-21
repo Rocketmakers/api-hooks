@@ -42,7 +42,7 @@ export namespace ApiHooksStore {
     /**
      *  The current status of the stored data
      */
-    status?: 'loading-manual' | 'loading-auto' | 'loading-refetch' | 'loaded' | 'error';
+    status?: 'loading-manual' | 'loading-auto' | 'loading-refetch' | 'loaded' | 'error' | 'aborted';
     /**
      *  The stored data
      */
@@ -251,6 +251,37 @@ export namespace ApiHooksStore {
         cacheKeyValue,
         paramHash,
         data,
+        maxCachingDepth,
+        error: undefined,
+        shouldRefetchData: undefined,
+        isSilent,
+      };
+    }
+
+    /**
+     * Factory function for creating a 'aborted' state update action
+     * @param endpointKey A key specific to the endpoint (in format `controller.endpoint`)
+     * @param paramHash A string representing the specific set of parameters passed to this data request
+     * @param cacheKeyValue A key to cache the data by - each unique key will represent a different state slice in the dictionary.
+     * @param maxCachingDepth The maximum number of data sets to store for an endpoint - comes from a query config setting
+     * @param isSilent Setting this to "true" means that state updates will happen without a re-render
+     * @returns An action object to be dispatched
+     */
+    export function aborted(
+      endpointKey: string,
+      paramHash: string,
+      cacheKeyValue: string,
+      maxCachingDepth: number,
+      timeStamp?: number,
+      isSilent = false
+    ): React.ReducerAction<React.Reducer<State, GenericAction>> {
+      return {
+        status: 'aborted',
+        timestamp: timeStamp ?? Date.now(),
+        endpointKey,
+        cacheKeyValue,
+        paramHash,
+        data: undefined,
         maxCachingDepth,
         error: undefined,
         shouldRefetchData: undefined,
