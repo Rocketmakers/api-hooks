@@ -203,6 +203,21 @@ export namespace ApiHooks {
       | ((param?: Partial<any> | undefined, fetchSettings?: Partial<UseMutationSettings<any, TRawResponse>> | undefined) => Promise<TRawResponse>);
   }
 
+  interface PreProcessorDetails {
+    /**
+     * Either `query` or `mutation` depending on what type of API Hooks is calling the pre-processing hook
+     */
+    hookType: HookType;
+    /**
+     * The ID of the endpoint being processed in `controller.endpoint` format.
+     */
+    endpointID: string;
+    /**
+     * The settings sent to the mutation
+     */
+    settings?: UseQuerySettings<any, any> | UseMutationSettings<any, any>;
+  }
+
   /**
    * Type for the optional processing hook that can be passed to creating settings
    */
@@ -212,6 +227,16 @@ export namespace ApiHooks {
   >(
     details: ProcessingHookDetails<TRawResponse, TError>
   ) => TProcessingResponse;
+
+  /**
+   * Type for the function that should be returned from the pre-processor
+   */
+  export type PreProcessorChecker = (details: PreProcessorDetails) => Promise<boolean>;
+
+  /**
+   * Type for the optional mutation pre-processor hook.
+   */
+  export type PreProcessorHook = () => PreProcessorChecker;
 
   /**
    * Type denoting the settings object passed to the create method.
@@ -241,6 +266,12 @@ export namespace ApiHooks {
      * @returns whatever you like, the returned value will be available, strictly typed, under the `processing` property of the live response returned by `useQuery` and `useMutation`
      */
     processingHook?: ProcessingHook<TProcessingResponse>;
+
+    /**
+     * An optional hook which should return an async function which will be called before every query/mutation.
+     * - The function returned by your hook should return a bool. If the bool is false the query/mutation will not run, true and it will.
+     */
+    preProcessorHook?: PreProcessorHook;
   }
 
   /**
@@ -614,7 +645,8 @@ export namespace ApiHooks {
     mockEndpointLibrary: MockEndpointControllerLibrary<TController>,
     defaultDataLibrary: DefaultDataControllerLibrary<TController>,
     generalConfig?: GeneralConfig,
-    processingHook?: ProcessingHook<TProcessingResponse>
+    processingHook?: ProcessingHook<TProcessingResponse>,
+    preProcessorHook?: PreProcessorHook
   ) {
     // Reduce the controller endpoints to produce an object for each one with the two hooks on it.
     return Object.keys(controller).reduce<EndpointHooks<TController, TProcessingResponse>>((incomingControllerDictionary, endpointKey) => {
@@ -751,6 +783,9 @@ export namespace ApiHooks {
             executionSettings?.onFetchStart,
             executionSettings?.onFetchSuccess,
           ]);
+
+          // retrieve the pre-processor if available
+          const preProcessor = preProcessorHook?.();
 
           // cache key - retrieve any cache key value if one exists in the settings
           const cacheKeyValueFromHook = React.useMemo(() => {
@@ -926,6 +961,19 @@ export namespace ApiHooks {
 
               // dispatch the loading action to change the fetching state
               dispatch?.(ApiHooksStore.Actions.loading(endpointHash, finalParamHash, finalCacheKey, mode, fetchSettings.maxCachingDepth));
+
+              // call the pre-processor if it exists
+              const shouldContinue = preProcessor
+                ? await preProcessor({ hookType: 'query', endpointID: endpointHash, settings: fetchSettings })
+                : true;
+
+              // abort if pre-processor returns false
+              if (!shouldContinue) {
+                ApiHooksGlobal.setFetching(endpointHash, finalCacheKey, false);
+                dispatch?.(ApiHooksStore.Actions.aborted(endpointHash, finalParamHash, finalCacheKey, fetchSettings.maxCachingDepth));
+                queryLog([`Query aborted by pre-processor`, { fetchSettings }], fetchSettings.debugKey);
+                return;
+              }
 
               ApiHooksEvents.onFetchStart.executeEventHooks(endpointHash, fetchSettings.parameters, 'query');
               fetchSettings.onFetchStart?.(fetchSettings, mode);
@@ -1229,6 +1277,9 @@ export namespace ApiHooks {
           // store the last used fetch settings in a ref so that they can be passed to the processing hook.
           const lastUsedSettings = React.useRef<UseMutationSettings<any, any>>();
 
+          // retrieve the pre-processor if available
+          const preProcessor = preProcessorHook?.();
+
           // settings - apply the hook execution settings (if any) to the passed in system, application and endpoint level.
           // NOTE - the JSON.stringify prevents the need for the consumer to memoize the incoming execution settings, it's not ideal, but it's only a small object so it should be ok.
           const settingsFromHook = React.useMemo<UseMutationSettings<any, any>>(() => {
@@ -1283,6 +1334,18 @@ export namespace ApiHooks {
 
               ApiHooksEvents.onFetchStart.executeEventHooks(endpointHash, finalSettings.parameters, 'mutation');
               finalSettings.onFetchStart?.(finalSettings, 'manual');
+
+              // call the pre-processor if it exists
+              const shouldContinue = preProcessor
+                ? await preProcessor({ hookType: 'mutation', endpointID: endpointHash, settings: finalSettings })
+                : true;
+
+              // abort if pre-processor returns false
+              if (!shouldContinue) {
+                setFetchStateResponse({ data: undefined, fetchingMode: 'not-fetching', isFetching: false });
+                mutationLog([`Mutation aborted by pre-processor`, { finalSettings }], finalSettings.debugKey);
+                return undefined;
+              }
 
               // store final settings used for processing hook and refetch queries.
               lastUsedSettings.current = finalSettings;
@@ -1548,7 +1611,8 @@ export namespace ApiHooks {
         mockEndpoints[key],
         defaultData[key],
         config?.generalConfig,
-        config?.processingHook
+        config?.processingHook,
+        config?.preProcessorHook
       );
       return newMemo;
     }, {} as ControllerHooks<TApiClient, TProcessingResponse>);

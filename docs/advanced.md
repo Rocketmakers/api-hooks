@@ -59,6 +59,42 @@ const validationErrors = processed?.validationErrors
 
 ---
 
+### The Pre-processing Hook
+
+Sometimes you need a centralized process which will allow you to abort requests made to the server on the basis of an initial check. A good example of this is to support offline network detection and prevent requests from being attempted if a mobile app is offline. The pre-processing hook allows you to do this.
+
+Your pre-processing hook should return a single function which, in turn, returns a Promise of boolean. The request to the server will be aborted if this returned boolean is `false`.
+
+```TypeScript
+export const preProcessorHook: ApiHooks.PreProcessorHook = () => {
+
+  // you can import other hooks or context here
+  const dispatchError = useDispatchError();
+
+  // define a function to be called before each request
+  const checkNetworkStatus = React.useCallback<ApiHooks.PreProcessorChecker>(async () => {
+    if (await isAppOffline()) {
+      dispatchError('App is offline, please connect to the internet and try again')
+      return false; // request to server will not fire
+    }
+    return true; // request to server will fire
+  }, []);
+
+  // return your function from the pre-processing hook
+  return checkNetworkStatus;
+};
+```
+
+Once defined, applying this pre-processing hook to your API Hooks instance is as simple as adding it to the central library configuration:
+```TypeScript
+import { ApiHooks } from "@rocketmakers/api-hooks"
+import { processingHook } from "*Processing hook location.*"
+
+export const apiHooks = ApiHooks.create(apiClient, {
+  preProcessorHook
+});
+```
+
 ### Lifecycle Listeners
 
 All three of the API request hooks ([useQuery](hooks.md#usequery), [useMutation](hooks.md#usemutation) and [useRequest](hooks.md#userequest)) provide listeners allowing a consuming hook or component to assign functions to various stages of the API Hooks lifecycle. This allows you to "hook into" stages of the process and perform side effects:
