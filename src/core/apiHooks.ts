@@ -1033,7 +1033,7 @@ export namespace ApiHooks {
                   });
               }
             },
-            [dispatch, setCacheKey, storedStateSlice, testKeys]
+            [dispatch, setCacheKey, storedStateSlice, testKeys, preProcessor]
           );
 
           // invoke - called when the component mounts if autoInvoke = true, and from the manual invoke method
@@ -1396,7 +1396,7 @@ export namespace ApiHooks {
               }
               return value;
             },
-            [settingsFromHook, refetchQueries]
+            [settingsFromHook, refetchQueries, preProcessor]
           );
 
           const processingHookDetails = React.useMemo<ProcessingHookDetails<any, any>>(() => {
