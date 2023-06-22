@@ -308,7 +308,7 @@ export namespace ApiHooks {
   /**
    * Type declaration for the global fetching mode, passed to the loading action to inform the status
    */
-  export type FetchingMode = 'not-fetching' | 'auto' | 'manual' | 'refetch';
+  export type FetchingMode = 'not-fetching' | 'auto' | 'manual' | 'refetch' | 'aborted';
 
   /** The type denoting the live response object returned from both the useQuery and useMutation hooks */
   export type LiveResponse<TCache, TProcessingResponse> = {
