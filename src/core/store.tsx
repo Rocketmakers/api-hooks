@@ -272,18 +272,14 @@ export namespace ApiHooksStore {
       paramHash: string,
       cacheKeyValue: string,
       maxCachingDepth: number,
-      timeStamp?: number,
       isSilent = false
     ): React.ReducerAction<React.Reducer<State, GenericAction>> {
       return {
         status: 'aborted',
-        timestamp: timeStamp ?? Date.now(),
         endpointKey,
         cacheKeyValue,
         paramHash,
-        data: undefined,
         maxCachingDepth,
-        error: undefined,
         shouldRefetchData: undefined,
         isSilent,
       };
