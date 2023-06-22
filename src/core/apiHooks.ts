@@ -899,7 +899,7 @@ export namespace ApiHooks {
               ],
               settingsFromHook.debugKey
             );
-            if (storedStateSlice?.error) {
+            if (storedStateSlice?.error || storedStateSlice?.status === 'aborted') {
               return validOnError;
             }
             return valid;
