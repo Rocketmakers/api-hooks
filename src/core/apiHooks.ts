@@ -1342,7 +1342,7 @@ export namespace ApiHooks {
 
               // abort if pre-processor returns false
               if (!shouldContinue) {
-                setFetchStateResponse({ data: undefined, fetchingMode: 'not-fetching', isFetching: false });
+                setFetchStateResponse({ data: undefined, fetchingMode: 'aborted', isFetching: false });
                 mutationLog([`Mutation aborted by pre-processor`, { finalSettings }], finalSettings.debugKey);
                 return undefined;
               }
