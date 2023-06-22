@@ -100,6 +100,8 @@ export namespace ApiHooksStore {
         return 'manual';
       case 'loading-refetch':
         return 'refetch';
+      case 'aborted':
+        return 'aborted';
       default:
         return 'not-fetching';
     }
